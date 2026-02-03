@@ -94,8 +94,8 @@ function calculate() {
   const tclRaw = (m * RATES[v]) + t + (stops * stopFee);
   const tclFinal = Math.round(Math.max(MINS[v], tclRaw));
 
-  // 2. MAC Calculation (Retail + 15%)
-  const macFinal = Math.round(tclFinal * 1.15);
+  // 2. MAC Calculation (Retail + 20%)
+  const macFinal = Math.round(tclFinal * 1.20);
   const margin = macFinal - tclFinal;
 
   // 3. Update the Dashboard
@@ -121,7 +121,7 @@ function copyQuote(type) {
   const text = `Thank you for your enquiry\n\n` +
                `We would like to offer the following\n\n` +
                `From ${b}${quoteData.pcA}${b} to ${b}${quoteData.pcB}${b} (${quoteData.distTxt})${stopDetails}\n` +
-               `Based on ${b}${v}${b} (min)\n` +
+               `Based on ${b}${v}${b} (min)\n\n` +
                `Price = ${b}£${quoteData.price}${b} + vat\n\n` +
                `⭐ Please let me know ⭐`;
 
