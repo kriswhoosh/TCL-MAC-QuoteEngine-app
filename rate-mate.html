@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>RATE MATE — GOLD v1.2</title>
+  <title>RATE MATE</title>
   <style>
     :root{ --bg:#1a0b2e; --header:#2a0a44; --card:#22103a; --gold:#ffd400; --pink:#ff4d94; --text:#ffd400; }
     body{ margin:0; background:var(--bg); color:var(--text); font-family: sans-serif; text-align:center; }
@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-  <header><div>RATE MATE — GOLD</div></header>
+  <header><div>RATE MATE</div></header>
   <div class="wrap">
     <div class="card">
       <label>Vehicle</label>
@@ -69,9 +69,31 @@
         quoteData.waypointCount = parseInt(params.get('waypointCount')) || 0;
         quoteData.distTxt = params.get('miles') + ' miles';
 
-        // 4. Trigger the price calculation immediately
-        calculate();
-    }
+        function calculate() {
+            const m = parseFloat(document.getElementById('miles').value) || 0;
+            const v = document.getElementById('vehicle').value;
+            const stops = quoteData.waypointCount || 0;
+
+            // 1. TCL Base Calculation (Your Rates)
+            let stopFee = (["18t", "Artic"].includes(v)) ? 40 : (["Luton", "7.5t"].includes(v) ? 25 : 15);
+            
+            let t = 0; // Tariffs logic
+            if (m >= 20 && m < 40) t = TARIFFS[v][0];
+            else if (m >= 40 && m < 60) t = TARIFFS[v][1];
+            // ... repeat for other tariff bands ...
+
+            const tclRaw = (m * RATES[v]) + t + (stops * stopFee);
+            const tclFinal = Math.round(Math.max(MINS[v], tclRaw));
+
+            // 2. MAC Calculation (15% Markup)
+            const macFinal = Math.round(tclFinal * 1.15);
+            const margin = macFinal - tclFinal;
+
+            // 3. Update UI
+            document.getElementById('macPrice').textContent = '£' + macFinal; // Retail
+            document.getElementById('tclPrice').textContent = '£' + tclFinal; // Cost
+            document.getElementById('marginAmt').textContent = '£' + margin;  // Profit
+        }
 });
 
     // At the very start of your script section

@@ -1,52 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCL-MAC Quote Engine</title>
-    <link rel="icon" type="image/png" href="jo-jo-san.png">
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>TCL-MAC Quote Engine</title>
+<link rel="icon" type="image/png" href="jo-jo-san.png">
+<style>
+  :root{ --bg:#1a0033; --card:#2a0a4a; --muted:#c59fd6; --ink:#f7f7f7; --line:#3a2358; --accent:#22c55e; --pill:#1f2937; --chip:#0e1520; --brand:#ffd94a; --pink:#ff7ab6; --bad:#ef4444; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#f7f7f7;font-family:Inter,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+  header{margin-bottom:14px;background:#2a0a4a;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;text-align:center}
+  h1{margin:0;font-size:34px;font-weight:900;color:#ffd94a}
+  .card{background:#151c24;border:1px solid #233141;border-radius:14px;padding:14px;margin:12px 0;color:#ff7ab6;text-align:center}
+  .card h3{color:#ffd94a;margin:0 0 8px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:900px){.row2{grid-template-columns:1fr}}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left}
+  input[type=text],textarea{width:100%;background:#0e1520;color:#e6eefc;border:1px solid #233141;border-radius:10px;padding:10px 12px;font-size:14px;outline:0;text-align:left}
+  textarea{min-height:140px;resize:vertical}
+  button{padding:10px 14px;border:0;border-radius:10px;font-weight:700;cursor:pointer;color:#ffd94a}
+  .btn{background:#1f2937;color:#ffd94a;border:1px solid #233141}.success{background:#22c55e;color:#06260e}.danger{background:#ef4444;color:#fff2c1}.swap{background:#374151;color:#ffd94a}
+  .stat{background:#0e1520;border:1px solid #233141;border-radius:10px;padding:10px;margin:8px 0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center}
+  .chip{background:#0e1520;border:1px solid #233141;border-radius:999px;padding:6px 10px;font-size:12px;user-select:none;color:inherit}
+  .chip.a{outline:2px solid #86efac}.chip.b{outline:2px solid #93c5fd}
+  .arrow{opacity:.6;margin:0 4px}
+  .valmsg{font-size:11px;color:#ef9a9a;margin-top:4px;text-align:left}
+  .code-box{background:#0e1520;border:1px solid #233141;border-radius:10px;padding:12px;margin:12px 0;font-family:monospace;font-size:12px;color:#93c5fd;overflow-x:auto}
+  /* Ensure the button classes use your theme variables */
+  .blue {
+      background-color: #2563eb !important; /* Standard Blue */
+      color: var(--brand) !important;
+  }
+
+  .purple {
+      background: #6d28d9 !important; /* Standard Purple */
+      color: var(--brand) !important;
+  }
+
+  /* Ensure buttons have a consistent base style */
+  button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+  }
+  button:hover {
+      opacity: 0.9;
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>TCL-MAC Quote Engine</h1>
-        
-        <div class="card">
-            <h3>Copy & Paste Route</h3>
-            <textarea id="pcInput" placeholder="Example: DY10 4JB to CM77 8EF via B71 4EX"></textarea>
-            <button onclick="parseText()" class="btn-primary">Parse Route</button>
-        </div>
+<div class="wrap">
+  <header><h1><strong>TCL-MAC Quote Engine</strong></h1><div style="color:#ff7ab6;font-weight:700;margin-top:4px">Another Kriswhoosh Project</div></header>
 
-        <div class="card">
-            <h3>Manual Controls</h3>
-            <div class="input-group">
-                <input type="text" id="pcA" placeholder="From (A)">
-                <input type="text" id="pcB" placeholder="To (B)">
-            </div>
-            <input type="text" id="pcVia" placeholder="Waypoints (comma separated)">
-            
-            <div id="vehicleSelectors" class="chip-group">
-                <button class="chip" onclick="selectVeh(this, 'SV')">SV</button>
-                <button class="chip" onclick="selectVeh(this, 'LWB')">LWB</button>
-                <button class="chip" onclick="selectVeh(this, '7.5t')">7.5t</button>
-                </div>
-            <input type="hidden" id="suggestedVehicle" value="LWB">
+  <div class="card"><div class="chips" id="routeChips"><span class="hint">↓ Try parsing a route below ↓</span></div></div>
 
-            <button id="btnCalc" class="btn-calc">Calculate Route</button>
-            <button id="btnRateMate" style="display:none;" class="btn-purple">Generate Dual Quote</button>
-        </div>
-
-        <div class="card">
-            <h3>Results</h3>
-            <div id="status">Ready.</div>
-            <div class="stat">Distance: <span id="distance">0.00</span></div>
-        </div>
-
-        <div id="rateMateCard" style="display:none;">
-            <iframe id="rateMateFrame" style="width:100%; height:800px; border:none;"></div>
-        </div>
+  <div class="row2">
+    <div class="card">
+      <h3>Copy & Paste TEXT area</h3>
+      <textarea id="pcInput" placeholder="Examples: BL5 1EE to B77 5PN via DY10 4JB"></textarea>
+      <div class="actions" style="margin-top:10px;">
+        <button onclick="parseText()" class="btn-primary">Parse Route</button>
+      </div>
     </div>
-    <script>
+  </div>
+
+  <div class="card" id="manualCard">
+    <h3>Manual Fields</h3>
+    <div class="row">
+      <div><label><small>From (A)</small></label><input id="pcA" type="text"></div>
+      <div><label><small>To (B)</small></label><input id="pcB" type="text"></div>
+    </div>
+    
+    <div style="margin-top:8px">
+      <label><small style="color:var(--pink)">Waypoints (Via) - Separate with commas</small></label>
+      <input id="pcVia" type="text" placeholder="e.g., Leeds, Manchester">
+    </div>
+    
+    <div style="margin-top:12px">
+      <label><small>Select Required Vehicle</small></label>
+      <div class="chips" id="vehicleSelectors" style="margin-top:8px; justify-content: flex-start;">
+        <button type="button" class="chip" onclick="selectVeh(this, 'SV')">SV</button>
+        <button type="button" class="chip" onclick="selectVeh(this, 'SWB')">SWB</button>
+        <button type="button" class="chip" onclick="selectVeh(this, 'LWB')" id="defaultVeh">LWB</button>
+        <button type="button" class="chip" onclick="selectVeh(this, 'XLWB')">XLWB</button>
+        <button type="button" class="chip" onclick="selectVeh(this, 'Luton')">Luton</button>
+        <button type="button" class="chip" onclick="selectVeh(this, '5t')">5t</button>
+        <button type="button" class="chip" onclick="selectVeh(this, '7.5t')">7.5t</button>
+        <button type="button" class="chip" onclick="selectVeh(this, '18t')">18t</button>
+        <button type="button" class="chip" onclick="selectVeh(this, 'Artic')">Artic</button>
+        <button type="button" class="chip" onclick="selectVeh(this, '3M+')">3M+</button>
+      </div>
+      <input type="hidden" id="suggestedVehicle" value="LWB">
+    </div>
+    
+    <div style="margin-top:10px" class="actions">
+      <button class="blue" id="btnCalc">Calculate Route</button>
+      <button class="purple" id="btnRateMate" style="display:none">Let's RATE-MATE it</button>
+      <button class="swap" id="btnSwap">Swap A ↔ B</button>
+      <button class="danger" id="btnClear">Clear</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Results</h3>
+    <div id="status" class="hint">Waiting for input…</div>
+    <div class="stat">Route: <span id="routeAB"></span></div>
+    <div class="stat">Distance: <span id="distance"></span></div>
+    <div class="stat">Drive Time: <span id="duration"></span></div>
+  </div>
+
+  <div class="card" id="rateMateCard" style="display:none;background:#1a0033;border:2px solid #6d28d9">
+    <h3 style="color:#ff4d9f">RATE-MATE</h3>
+    <iframe id="rateMateFrame" style="width:100%;height:650px;border:none;border-radius:10px"></iframe>
+  </div>
+
+  <details class="card"><summary>Debug</summary><pre id="debug">Ready.</pre></details>
+</div>
+
+<script>
 // --- 1. Vehicle Selection Logic ---
 window.selectVeh = function(btn, val) {
     const allChips = document.querySelectorAll('#vehicleSelectors .chip');
@@ -131,6 +207,6 @@ document.getElementById('btnCalc').onclick = async () => {
 };
 
 </script>
-<script src="rate-mate-bridge.js"></script>
+  <script src="rate-mate-bridge.js"></script>
 </body>
 </html>
