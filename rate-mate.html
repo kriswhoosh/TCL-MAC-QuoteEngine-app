@@ -51,133 +51,51 @@
   </div>
 
   <script>
-    window.addEventListener('DOMContentLoaded', () => {
-    // 1. Look at the URL to see if JO-JO-SAN sent any notes
-    const params = new URLSearchParams(window.location.search);
-    
-    if (params.has('miles')) {
-        console.log("Found data in URL, auto-filling...");
-        
-        // 2. Fill in the Miles and Vehicle boxes
-        document.getElementById('miles').value = params.get('miles');
-        document.getElementById('vehicle').value = params.get('vehicle') || 'LWB';
-        
-        // 3. Update the hidden quote data for your WhatsApp message
-        quoteData.pcA = params.get('pcA') || '';
-        quoteData.pcB = params.get('pcB') || '';
-        quoteData.viaText = params.get('viaText') || '';
-        quoteData.waypointCount = parseInt(params.get('waypointCount')) || 0;
-        quoteData.distTxt = params.get('miles') + ' miles';
-
-        function calculate() {
-            const m = parseFloat(document.getElementById('miles').value) || 0;
-            const v = document.getElementById('vehicle').value;
-            const stops = quoteData.waypointCount || 0;
-
-            // 1. TCL Base Calculation (Your Rates)
-            let stopFee = (["18t", "Artic"].includes(v)) ? 40 : (["Luton", "7.5t"].includes(v) ? 25 : 15);
-            
-            let t = 0; // Tariffs logic
-            if (m >= 20 && m < 40) t = TARIFFS[v][0];
-            else if (m >= 40 && m < 60) t = TARIFFS[v][1];
-            // ... repeat for other tariff bands ...
-
-            const tclRaw = (m * RATES[v]) + t + (stops * stopFee);
-            const tclFinal = Math.round(Math.max(MINS[v], tclRaw));
-
-            // 2. MAC Calculation (15% Markup)
-            const macFinal = Math.round(tclFinal * 1.15);
-            const margin = macFinal - tclFinal;
-
-            // 3. Update UI
-            document.getElementById('macPrice').textContent = '£' + macFinal; // Retail
-            document.getElementById('tclPrice').textContent = '£' + tclFinal; // Cost
-            document.getElementById('marginAmt').textContent = '£' + margin;  // Profit
-        }
-});
-
-    // At the very start of your script section
-window.onload = () => {
-    const params = new URLSearchParams(window.location.search);
-    
-    if (params.has('miles')) {
-        // Fill the fields immediately from the URL
-        document.getElementById('miles').value = params.get('miles');
-        document.getElementById('vehicle').value = params.get('vehicle') || 'LWB';
-        
-        // Update the internal quote data for WhatsApp
-        quoteData.pcA = params.get('pcA') || '';
-        quoteData.pcB = params.get('pcB') || '';
-        quoteData.viaText = params.get('viaText') || '';
-        quoteData.waypointCount = parseInt(params.get('waypointCount')) || 0;
-        quoteData.distTxt = params.get('miles') + ' miles';
-
-        // Run the price calculation
-        calculate();
-    }
+const RATES = { "SV":1.10, "SWB":1.25, "LWB":1.35, "XLWB":1.50, "Luton":1.65, "5t":2.50, "7.5t":2.89, "18t":3.85, "Artic":4.85, "3M+":6.00 };
+const MINS = { "SV":50, "SWB":59, "LWB":69, "XLWB":79, "Luton":99, "5t":199, "7.5t":229, "18t":269, "Artic":289, "3M+":299 };
+const TARIFFS = {
+  "SV":[20,15,12.5,10], "SWB":[22.5,17,14,11.5], "LWB":[24.5,18.5,15.5,12.5], "XLWB":[27.5,20.5,17,13.5],
+  "Luton":[30,22.5,18.5,15], "5t":[45.5,34,28.5,22.5], "7.5t":[52.5,39.5,33,26.5], "18t":[70,52.5,44,35],
+  "Artic":[88,66,55,44], "3M+":[109,82,68,54.5]
 };
 
-    const RATES = { "SV":1.10, "SWB":1.25, "LWB":1.35, "XLWB":1.50, "Luton":1.65, "5t":2.50, "7.5t":2.89, "18t":3.85, "Artic":4.85, "3M+":6.00 };
-    const MINS = { "SV":50, "SWB":59, "LWB":69, "XLWB":79, "Luton":99, "5t":199, "7.5t":229, "18t":269, "Artic":289, "3M+":299 };
-    const TARIFFS = {
-      "SV":[20,15,12.5,10], "SWB":[22.5,17,14,11.5], "LWB":[24.5,18.5,15.5,12.5], "XLWB":[27.5,20.5,17,13.5], 
-      "Luton":[30,22.5,18.5,15], "5t":[45.5,34,28.5,22.5], "7.5t":[52.5,39.5,33,26.5], "18t":[70,52.5,44,35], 
-      "Artic":[88,66,55,44], "3M+":[109,82,68,54.5]
-    };
-
-    // Update your quoteData object at the top of the script
 let quoteData = { pcA: '', pcB: '', distTxt: '', price: 0, waypointCount: 0, viaText: '' };
 
-window.addEventListener('message', (e) => {
-  if (e.data.type === 'rate-mate') {
-    // ... existing lines ...
-    quoteData.viaText = e.data.viaText || ''; // New line to capture postcodes
-    calculate();
-  }
-});
+function calculate() {
+  const m = parseFloat(document.getElementById('miles').value) || 0;
+  const v = document.getElementById('vehicle').value;
+  const stops = quoteData.waypointCount || 0;
 
-    function calculate() {
-    const m = parseFloat(document.getElementById('miles').value) || 0;
-    const v = document.getElementById('vehicle').value;
-    const stops = quoteData.waypointCount || 0;
+  // stop fee by vehicle
+  let stopFee = 15;
+  if (["Luton","5t","7.5t"].includes(v)) stopFee = 25;
+  if (["18t","Artic","3M+"].includes(v)) stopFee = 40;
 
-    // 1. Calculate Waypoint Fees
-    let stopFee = 0;
-    if (["SV", "SWB", "LWB", "XLWB"].includes(v)) {
-        stopFee = 15;
-    } else if (["Luton", "5t", "7.5t"].includes(v)) {
-        stopFee = 25;
-    } else if (["18t", "Artic", "3M+"].includes(v)) {
-        stopFee = 40;
-    }
+  // tariff band
+  let t = 0;
+  if (m >= 20 && m < 40) t = TARIFFS[v][0];
+  else if (m >= 40 && m < 60) t = TARIFFS[v][1];
+  else if (m >= 60 && m < 80) t = TARIFFS[v][2];
+  else if (m >= 80 && m < 100) t = TARIFFS[v][3];
 
-    // 2. Mileage Tariffs
-    let t = 0;
-    if (m >= 20 && m < 40) t = TARIFFS[v][0];
-    else if (m >= 40 && m < 60) t = TARIFFS[v][1];
-    else if (m >= 60 && m < 80) t = TARIFFS[v][2];
-    else if (m >= 80 && m < 100) t = TARIFFS[v][3];
+  const raw = (m * RATES[v]) + t + (stops * stopFee);
+  const final = Math.round(Math.max(MINS[v], raw));
 
-    // 3. Calculation Logic
-    const raw = (m * RATES[v]) + t + (stops * stopFee);
-    const final = Math.round(Math.max(MINS[v], raw));
+  document.getElementById('finalPrice').textContent = '£' + final;
+  quoteData.price = final;
+}
 
-    document.getElementById('finalPrice').textContent = '£' + final;
-    quoteData.price = final;
-  }
-
-    function copyQuote(type) {
+function copyQuote(type) {
   const v = document.getElementById('vehicle').value;
   const isWA = type === 'whatsapp';
-  const b = isWA ? '*' : ''; 
-  
-  // Format the waypoint section: (inc. 2 stop[s] (B71 4EX, B69 2HG))
+  const b = isWA ? '*' : '';
+
   let stopDetails = '';
   if (quoteData.waypointCount > 0) {
     const pcods = quoteData.viaText ? ` (${quoteData.viaText})` : '';
     stopDetails = ` (inc. ${quoteData.waypointCount} stop[s]${pcods})`;
   }
-  
+
   const text = `Thank you for your enquiry\n\n` +
                `We would like to offer the following\n\n` +
                `From ${b}${quoteData.pcA}${b} to ${b}${quoteData.pcB}${b} (${quoteData.distTxt})${stopDetails}\n` +
@@ -192,57 +110,32 @@ window.addEventListener('message', (e) => {
   });
 }
 
-    window.addEventListener('message', (e) => {
-      if (e.data.type === 'rate-mate') {
-        console.log("RATE-MATE received data:", e.data);
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('miles')) {
+    document.getElementById('miles').value = params.get('miles');
+    document.getElementById('vehicle').value = params.get('vehicle') || 'LWB';
+    quoteData.pcA = params.get('pcA') || '';
+    quoteData.pcB = params.get('pcB') || '';
+    quoteData.viaText = params.get('viaText') || '';
+    quoteData.waypointCount = parseInt(params.get('waypointCount')) || 0;
+    quoteData.distTxt = params.get('miles') + ' miles';
+    calculate();
+  }
+});
 
-        // 1. Force the Mileage update
-        if (e.data.miles) {
-            const milesInput = document.getElementById('miles');
-            milesInput.value = e.data.miles;
-        }
-
-        // 2. Force the Vehicle update
-        if (e.data.vehicle && RATES[e.data.vehicle]) {
-            document.getElementById('vehicle').value = e.data.vehicle;
-        }
-        
-        // 3. Sync all other quote data
-        quoteData.pcA = e.data.pcA || '';
-        quoteData.pcB = e.data.pcB || '';
-        quoteData.distTxt = e.data.distTxt || '';
-        quoteData.waypointCount = e.data.waypointCount || 0;
-        quoteData.viaText = e.data.viaText || '';
-        
-        // 4. Run the calculation immediately
-        // Inside the script section of rate-mate.html
-function calculate() {
-    const m = parseFloat(document.getElementById('miles').value) || 0;
-    const v = document.getElementById('vehicle').value;
-    const stops = quoteData.waypointCount || 0;
-
-    // 1. TCL Base Calculation (Your Rates)
-    let stopFee = (["18t", "Artic"].includes(v)) ? 40 : (["Luton", "7.5t"].includes(v) ? 25 : 15);
-    
-    let t = 0; // Tariffs logic
-    if (m >= 20 && m < 40) t = TARIFFS[v][0];
-    else if (m >= 40 && m < 60) t = TARIFFS[v][1];
-    // ... repeat for other tariff bands ...
-
-    const tclRaw = (m * RATES[v]) + t + (stops * stopFee);
-    const tclFinal = Math.round(Math.max(MINS[v], tclRaw));
-
-    // 2. MAC Calculation (15% Markup)
-    const macFinal = Math.round(tclFinal * 1.15);
-    const margin = macFinal - tclFinal;
-
-    // 3. Update UI
-    document.getElementById('macPrice').textContent = '£' + macFinal; // Retail
-    document.getElementById('tclPrice').textContent = '£' + tclFinal; // Cost
-    document.getElementById('marginAmt').textContent = '£' + margin;  // Profit
-}
-      }
-    });
-  </script>
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'rate-mate') {
+    if (e.data.miles) document.getElementById('miles').value = e.data.miles;
+    if (e.data.vehicle && RATES[e.data.vehicle]) document.getElementById('vehicle').value = e.data.vehicle;
+    quoteData.pcA = e.data.pcA || '';
+    quoteData.pcB = e.data.pcB || '';
+    quoteData.distTxt = e.data.distTxt || '';
+    quoteData.waypointCount = e.data.waypointCount || 0;
+    quoteData.viaText = e.data.viaText || '';
+    calculate();
+  }
+});
+</script>
 </body>
 </html>
