@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>TCL-MAC Quote Engine</title>
 <link rel="icon" type="image/png" href="jo-jo-san.png">
-<!-- Load the official Google Maps Library using an Environment Variable -->
+<!-- Load the official Google Maps Library using the Cloudflare Environment Variable -->
 <script>
   (function() {
-    // This placeholder will be replaced by Cloudflare during deployment
-    const apiKey = "GOOGLE_MAPS_API_KEY_PLACEHOLDER";
+    // This matches the variable name in your Cloudflare Settings exactly
+    const apiKey = "Maps_API_KEY_PLACEHOLDER";
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`;
     document.head.appendChild(script);
@@ -115,7 +115,7 @@ document.getElementById('btnCalc').onclick = function() {
     
     if(!from || !to) return;
     
-    if(typeof google === 'undefined') {
+    if(typeof google === 'undefined' || typeof google.maps === 'undefined') {
         document.getElementById('status').textContent = 'Error: Google Maps script failed to load.';
         return;
     }
