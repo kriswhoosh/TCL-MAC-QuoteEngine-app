@@ -176,11 +176,21 @@ document.getElementById('btnCalc').onclick = async () => {
     
     try {
         const geoPoints = [];
-        for (const loc of allLocs) {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(loc)}`).then(r => r.json());
-            if (res.length > 0) geoPoints.push({ lat: res[0].lat, lon: res[0].lon, name: res[0].display_name.split(',')[0] });
-        }
-
+                // Loop through all locations including 'from', all 'viaPoints', and 'to'
+                for (const loc of allLocs) {
+                    try {
+                        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(loc)}`).then(r => r.json());
+                        if (res && res.length > 0) {
+                            geoPoints.push({ 
+                                lat: res[0].lat, 
+                                lon: res[0].lon, 
+                                name: res[0].display_name.split(',')[0] 
+                            });
+                        }
+                    } catch (err) {
+                        console.error(`Geocoding failed for: ${loc}`, err);
+                    }
+                }
         const coordString = geoPoints.map(g => `${g.lon},${g.lat}`).join(';');
         const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordString}?overview=false`).then(r => r.json());
         
