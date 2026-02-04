@@ -40,19 +40,7 @@
 <div class="wrap">
   <header><h1><strong>TCL-MAC Quote Engine</strong></h1><div style="color:#ff7ab6;font-weight:700;margin-top:4px">Another Kriswhoosh Project</div></header>
 
-  <div class="card"><div class="chips" id="routeChips"><span class="hint">↓ Use the fields below to calculate your route ↓</span></div></div>
-
-  <!-- COMMENTED OUT PER CLIENT REQUEST
-  <div class="row2">
-    <div class="card">
-      <h3>Copy & Paste TEXT area</h3>
-      <textarea id="pcInput" placeholder="Examples: BL5 1EE to B77 5PN via DY10 4JB"></textarea>
-      <div class="actions" style="margin-top:10px;">
-        <button onclick="parseText()" class="btn-primary">Parse Route</button>
-      </div>
-    </div>
-  </div>
-  -->
+  <div class="card"><div class="chips" id="routeChips"><span class="hint">↓ Enter postcodes below and click Calculate ↓</span></div></div>
 
   <div class="card" id="manualCard">
     <h3>Manual Fields</h3>
@@ -108,6 +96,9 @@
 </div>
 
 <script>
+// --- GOOGLE API CONFIG ---
+const GOOGLE_API_KEY = 'AIzaSyALDdssPzz4tbH_ndit92NHIfP3G3MkoPo'; // PASTE YOUR KEY HERE
+
 window.selectVeh = function(btn, val) {
     const allChips = document.querySelectorAll('#vehicleSelectors .chip');
     allChips.forEach(c => {
@@ -119,7 +110,6 @@ window.selectVeh = function(btn, val) {
     document.getElementById('suggestedVehicle').value = val;
 };
 
-// --- Routing Logic ---
 document.getElementById('btnCalc').onclick = async () => {
     const from = document.getElementById('pcA').value.trim();
     const to = document.getElementById('pcB').value.trim();
@@ -127,69 +117,75 @@ document.getElementById('btnCalc').onclick = async () => {
     
     if(!from || !to) return;
     
+    // Safety check for the API key
+    if(!GOOGLE_API_KEY) {
+        document.getElementById('status').textContent = 'Please enter a Google API Key in the code (Line 106).';
+        return;
+    }
+    
     const viaPoints = viaRaw ? viaRaw.split(',').map(p => p.trim()).filter(p => p) : [];
-    const allLocs = [from, ...viaPoints, to];
-    document.getElementById('status').textContent = 'Geocoding...';
+    document.getElementById('status').textContent = 'Calculating via Google...';
     
     try {
-        const geoPoints = [];
-        for (const loc of allLocs) {
-            // FIX: Using countrycodes=gb and explicitly adding "UK" to prevent misfires with partial postcodes
-            const query = encodeURIComponent(loc + ", UK");
-            const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=gb&q=${query}`;
-            const res = await fetch(url).then(r => r.json());
-            
-            if (res.length > 0) {
-              geoPoints.push({ 
-                lat: res[0].lat, 
-                lon: res[0].lon, 
-                name: res[0].display_name.split(',')[0] 
-              });
-            }
+        // Use Google Directions API to handle multi-stop routing accurately
+        const dirUrl = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}&waypoints=${encodeURIComponent(viaPoints.join('|'))}&units=imperial&key=${GOOGLE_API_KEY}`;
+        
+        const response = await fetch(dirUrl);
+        const data = await response.json();
+
+        if (data.status !== 'OK') {
+            throw new Error(data.error_message || `Google Error: ${data.status}`);
         }
 
-        if (geoPoints.length < 2) throw new Error('Could not geocode locations in the UK.');
+        const route = data.routes[0];
+        let totalDistanceMeters = 0;
+        let totalDurationSeconds = 0;
+        let routeNames = [];
 
-        const coordString = geoPoints.map(g => `${g.lon},${g.lat}`).join(';');
-        const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordString}?overview=false`).then(r => r.json());
-        
-        if (route.code !== 'Ok') throw new Error('Routing failed');
+        // Loop through the "legs" of the journey to get totals
+        route.legs.forEach((leg, index) => {
+            totalDistanceMeters += leg.distance.value;
+            totalDurationSeconds += leg.duration.value;
+            
+            // Clean up addresses for the results display (e.g., "DY10 4JB, UK" -> "DY10 4JB")
+            routeNames.push(leg.start_address.split(',')[0]);
+            if(index === route.legs.length - 1) {
+                routeNames.push(leg.end_address.split(',')[0]);
+            }
+        });
 
-        const distMiles = (route.routes[0].distance / 1609.344).toFixed(2);
+        const distMiles = (totalDistanceMeters / 1609.344).toFixed(2);
         
-        // Drive Time Logic
-        const seconds = route.routes[0].duration;
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
+        // Formatting duration (hours/mins)
+        const h = Math.floor(totalDurationSeconds / 3600);
+        const m = Math.floor((totalDurationSeconds % 3600) / 60);
         const durationText = h > 0 ? `${h}h ${m}m` : `${m} mins`;
 
-        document.getElementById('routeAB').textContent = geoPoints.map(g => g.name).join(' → ');
+        // Update UI
+        document.getElementById('routeAB').textContent = routeNames.join(' → ');
         document.getElementById('distance').textContent = distMiles + ' miles';
         document.getElementById('duration').textContent = durationText;
+        
         window.currentWaypointCount = viaPoints.length;
 
-        // --- Standardized Google Maps Link ---
-        const origin = encodeURIComponent(from);
-        const destination = encodeURIComponent(to);
-        const waypoints = viaPoints.length > 0 ? `&waypoints=${encodeURIComponent(viaPoints.join('|'))}` : '';
-        const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints}&travelmode=driving`;
+        // Visual Map Link (stays the same as before)
+        const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}&waypoints=${encodeURIComponent(viaPoints.join('|'))}&travelmode=driving`;
 
         document.getElementById('status').innerHTML = `
             Route ready! 
             <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;text-decoration:underline;">[View Route on Google Maps]</a>
         `;
         
+        // Trigger Rate-Mate
         if (typeof RateMate !== 'undefined') {
             RateMate.showButton();
-        } else {
-            setTimeout(() => { if(typeof RateMate !== 'undefined') RateMate.showButton(); }, 500);
         }
     } catch(e) { 
         document.getElementById('status').textContent = 'Error: ' + e.message; 
+        console.error("Google API Error:", e);
     }
 };
 
-// --- Swap Logic ---
 document.getElementById('btnSwap').onclick = () => {
     const a = document.getElementById('pcA').value;
     const b = document.getElementById('pcB').value;
@@ -197,19 +193,14 @@ document.getElementById('btnSwap').onclick = () => {
     document.getElementById('pcB').value = a;
 };
 
-// --- Clear Button Logic ---
 document.getElementById('btnClear').onclick = () => {
     document.getElementById('pcA').value = '';
     document.getElementById('pcB').value = '';
     document.getElementById('pcVia').value = '';
-    const pcInput = document.getElementById('pcInput');
-    if(pcInput) pcInput.value = '';
-    
     document.getElementById('status').textContent = 'Waiting for input…';
     document.getElementById('routeAB').textContent = '';
     document.getElementById('distance').textContent = '';
     document.getElementById('duration').textContent = '';
-    
     document.getElementById('btnRateMate').style.display = 'none';
     document.getElementById('rateMateCard').style.display = 'none';
 };
