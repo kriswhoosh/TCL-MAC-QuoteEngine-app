@@ -28,36 +28,19 @@
   .arrow{opacity:.6;margin:0 4px}
   .valmsg{font-size:11px;color:#ef9a9a;margin-top:4px;text-align:left}
   .code-box{background:#0e1520;border:1px solid #233141;border-radius:10px;padding:12px;margin:12px 0;font-family:monospace;font-size:12px;color:#93c5fd;overflow-x:auto}
-  /* Ensure the button classes use your theme variables */
-  .blue {
-      background-color: #2563eb !important; /* Standard Blue */
-      color: var(--brand) !important;
-  }
+  
+  .blue { background-color: #2563eb !important; color: var(--brand) !important; }
+  .purple { background: #6d28d9 !important; color: var(--brand) !important; }
 
-  .purple {
-      background: #6d28d9 !important; /* Standard Purple */
-      color: var(--brand) !important;
-  }
-
-  /* Ensure buttons have a consistent base style */
-  button {
-      padding: 10px 14px;
-      border: 0;
-      border-radius: 10px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.2s;
-  }
-  button:hover {
-      opacity: 0.9;
-  }
+  button { transition: opacity 0.2s; }
+  button:hover { opacity: 0.9; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header><h1><strong>TCL-MAC Quote Engine</strong></h1><div style="color:#ff7ab6;font-weight:700;margin-top:4px">Another Kriswhoosh Project</div></header>
 
-  <div class="card"><div class="chips" id="routeChips"><span class="hint">↓ Try parsing a route below ↓</span></div></div>
+  <div class="card"><div class="chips" id="routeChips"><span class="hint">↓ Use the fields below to calculate your route ↓</span></div></div>
 
   <!-- COMMENTED OUT PER CLIENT REQUEST
   <div class="row2">
@@ -74,13 +57,13 @@
   <div class="card" id="manualCard">
     <h3>Manual Fields</h3>
     <div class="row">
-      <div><label><small>From (A)</small></label><input id="pcA" type="text"></div>
-      <div><label><small>To (B)</small></label><input id="pcB" type="text"></div>
+      <div><label><small>From (A)</small></label><input id="pcA" type="text" placeholder="Postcode"></div>
+      <div><label><small>To (B)</small></label><input id="pcB" type="text" placeholder="Postcode"></div>
     </div>
     
     <div style="margin-top:8px">
       <label><small style="color:var(--pink)">Waypoints (Via) - Separate with commas</small></label>
-      <input id="pcVia" type="text" placeholder="e.g., Leeds, Manchester">
+      <input id="pcVia" type="text" placeholder="e.g., DY10 4JB, B71 4EX">
     </div>
     
     <div style="margin-top:12px">
@@ -125,7 +108,6 @@
 </div>
 
 <script>
-// --- 1. Vehicle Selection Logic ---
 window.selectVeh = function(btn, val) {
     const allChips = document.querySelectorAll('#vehicleSelectors .chip');
     allChips.forEach(c => {
@@ -137,34 +119,7 @@ window.selectVeh = function(btn, val) {
     document.getElementById('suggestedVehicle').value = val;
 };
 
-// --- 2. The Waypoint Parser ---
-function extractLocations(text) {
-    const s = String(text || '');
-    const m = s.match(/from\s+(.+?)\s+to\s+(.+?)(?:\s+via\s+(.+))?$/i);
-    if (m) {
-        return {
-            from: m[1].trim().toUpperCase(),
-            to: m[2].trim().toUpperCase(),
-            via: m[3] ? m[3].split(/,|and|via/i).map(x => x.trim().toUpperCase()).filter(Boolean).join(', ') : ''
-        };
-    }
-    return null;
-}
-
-window.parseText = function() {
-    const input = document.getElementById('pcInput').value;
-    const data = extractLocations(input);
-    if (data) {
-        document.getElementById('pcA').value = data.from;
-        document.getElementById('pcB').value = data.to;
-        document.getElementById('pcVia').value = data.via;
-        document.getElementById('status').textContent = 'Text parsed! Now click Calculate.';
-    } else {
-        document.getElementById('status').textContent = 'Could not parse text pattern.';
-    }
-};
-
-// --- 3. Routing Logic ---
+// --- Routing Logic ---
 document.getElementById('btnCalc').onclick = async () => {
     const from = document.getElementById('pcA').value.trim();
     const to = document.getElementById('pcB').value.trim();
@@ -200,18 +155,18 @@ document.getElementById('btnCalc').onclick = async () => {
 
         const distMiles = (route.routes[0].distance / 1609.344).toFixed(2);
         
-        // --- Added: Drive Time Logic ---
+        // Drive Time Logic
         const seconds = route.routes[0].duration;
-        const hours = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        const durationText = hours > 0 ? `${hours}h ${mins}m` : `${mins} mins`;
-        
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const durationText = h > 0 ? `${h}h ${m}m` : `${m} mins`;
+
         document.getElementById('routeAB').textContent = geoPoints.map(g => g.name).join(' → ');
         document.getElementById('distance').textContent = distMiles + ' miles';
-        document.getElementById('duration').textContent = durationText; // Fill the stat box
+        document.getElementById('duration').textContent = durationText;
         window.currentWaypointCount = viaPoints.length;
 
-        // --- Standardized Google Maps Link (Reliable for all stops) ---
+        // --- Standardized Google Maps Link ---
         const origin = encodeURIComponent(from);
         const destination = encodeURIComponent(to);
         const waypoints = viaPoints.length > 0 ? `&waypoints=${encodeURIComponent(viaPoints.join('|'))}` : '';
@@ -224,14 +179,7 @@ document.getElementById('btnCalc').onclick = async () => {
         
         if (typeof RateMate !== 'undefined') {
             RateMate.showButton();
-        }
-        
-        
-        // Added safety check to prevent the "undefined" error
-        if (typeof RateMate !== 'undefined') {
-            RateMate.showButton();
         } else {
-            console.log("Bridge not ready yet, retrying...");
             setTimeout(() => { if(typeof RateMate !== 'undefined') RateMate.showButton(); }, 500);
         }
     } catch(e) { 
@@ -239,28 +187,31 @@ document.getElementById('btnCalc').onclick = async () => {
     }
 };
 
-    // --- Clear Button Logic ---
-    document.getElementById('btnClear').onclick = () => {
-        // Reset all input fields
-        document.getElementById('pcInput').value = '';
-        document.getElementById('pcA').value = '';
-        document.getElementById('pcB').value = '';
-        document.getElementById('pcVia').value = '';
-        
-        // Reset results and status
-        document.getElementById('status').textContent = 'Waiting for input…';
-        document.getElementById('routeAB').textContent = '';
-        document.getElementById('distance').textContent = '';
-        document.getElementById('duration').textContent = '';
-        
-        // Hide the Rate-Mate card and button
-        document.getElementById('btnRateMate').style.display = 'none';
-        document.getElementById('rateMateCard').style.display = 'none';
-        
-        console.log("App cleared.");
-    };
+// --- Swap Logic ---
+document.getElementById('btnSwap').onclick = () => {
+    const a = document.getElementById('pcA').value;
+    const b = document.getElementById('pcB').value;
+    document.getElementById('pcA').value = b;
+    document.getElementById('pcB').value = a;
+};
 
+// --- Clear Button Logic ---
+document.getElementById('btnClear').onclick = () => {
+    document.getElementById('pcA').value = '';
+    document.getElementById('pcB').value = '';
+    document.getElementById('pcVia').value = '';
+    const pcInput = document.getElementById('pcInput');
+    if(pcInput) pcInput.value = '';
+    
+    document.getElementById('status').textContent = 'Waiting for input…';
+    document.getElementById('routeAB').textContent = '';
+    document.getElementById('distance').textContent = '';
+    document.getElementById('duration').textContent = '';
+    
+    document.getElementById('btnRateMate').style.display = 'none';
+    document.getElementById('rateMateCard').style.display = 'none';
+};
 </script>
-  <script src="rate-mate-bridge.js"></script>
+<script src="rate-mate-bridge.js"></script>
 </body>
 </html>
