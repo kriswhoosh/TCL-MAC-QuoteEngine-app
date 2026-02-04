@@ -5,16 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>TCL-MAC Quote Engine</title>
 <link rel="icon" type="image/png" href="jo-jo-san.png">
-<!-- Load the official Google Maps Library using the Cloudflare Environment Variable -->
-<script>
-  (function() {
-    // This matches the variable name in your Cloudflare Settings exactly
-    const apiKey = "Maps_API_KEY_PLACEHOLDER";
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`;
-    document.head.appendChild(script);
-  })();
-</script>
+<!-- Load the official Google Maps Library -->
+<!-- REPLACE 'Maps_API_KEY_PLACEHOLDER' with your actual API key if not using Cloudflare variables -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyALDdssPzz4tbH_ndit92NHIfP3G3MkoPo&libraries=geometry"></script>
 <style>
   :root{ --bg:#1a0033; --card:#2a0a4a; --muted:#c59fd6; --ink:#f7f7f7; --line:#3a2358; --accent:#22c55e; --pill:#1f2937; --chip:#0e1520; --brand:#ffd94a; --pink:#ff7ab6; --bad:#ef4444; }
   *{box-sizing:border-box}
@@ -116,7 +109,7 @@ document.getElementById('btnCalc').onclick = function() {
     if(!from || !to) return;
     
     if(typeof google === 'undefined' || typeof google.maps === 'undefined') {
-        document.getElementById('status').textContent = 'Error: Google Maps script failed to load.';
+        document.getElementById('status').textContent = 'Error: Google Maps script failed to load. Ensure your key is valid.';
         return;
     }
 
