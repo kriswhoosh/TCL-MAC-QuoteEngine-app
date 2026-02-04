@@ -59,12 +59,16 @@
         <div style="font-size: 11px; color: #1ec86d; font-weight: bold;">
           PROFIT: <span id="marginAmt">£0</span>
         </div>
+        <button class="btn" onclick="copyQuote('tcl')" style="width: 100%; background: #3a2358;">Copy TCL Quote</button>
       </div>
     </div>
     <div id="copyStatus" class="copy-msg"></div>
   </div>
 
   <script>
+  let lastTclPrice = 0;
+  let lastMacPrice = 0;
+
   // TCL Rates (Your Cost)
   const TCL_RATES = { "SV":1.10, "SWB":1.25, "LWB":1.35, "XLWB":1.50, "Luton":1.65, "5t":2.50, "7.5t":2.90, "18t":3.85, "Artic":4.85, "3M+":6.00 };
   const TCL_MINS  = { "SV":50, "SWB":59, "LWB":69, "XLWB":79, "Luton":99, "5t":199, "7.5t":229, "18t":269, "Artic":289, "3M+":299 };
@@ -107,17 +111,22 @@ function calculate() {
   const margin = macFinal - tclFinal;
 
   // 3. Update Dashboard
+  lastTclPrice = tclFinal;
+  lastMacPrice = macFinal;
+
   document.getElementById('tclPrice').textContent = '£' + tclFinal;
   document.getElementById('macPrice').textContent = '£' + macFinal;
   document.getElementById('marginAmt').textContent = '£' + margin;
-  
-  quoteData.price = macFinal;
 }
 
-function copyQuote(type) {
+function copyQuote(mode) {
   const v = document.getElementById('vehicle').value;
-  const isWA = type === 'whatsapp';
-  const b = isWA ? '*' : '';
+  // Use lastMacPrice for 'whatsapp' (Retail) and lastTclPrice for 'tcl' (Cost)
+  const priceToCopy = (mode === 'tcl') ? lastTclPrice : lastMacPrice;
+  const quoteSource = (mode === 'tcl') ? "T&C Logistics (Cost)" : "MAC Express (Retail)";
+  
+  // Bold formatting for WhatsApp, plain for others
+  const b = (mode === 'whatsapp') ? '*' : '';
 
   let stopDetails = '';
   if (quoteData.waypointCount > 0) {
@@ -125,16 +134,15 @@ function copyQuote(type) {
     stopDetails = ` (inc. ${quoteData.waypointCount} stop[s]${pcods})`;
   }
 
-  const text = `Thank you for your enquiry\n\n` +
-               `We would like to offer the following\n\n` +
+  const text = `--- ${quoteSource} ---\n` +
                `From ${b}${quoteData.pcA}${b} to ${b}${quoteData.pcB}${b} (${quoteData.distTxt})${stopDetails}\n` +
-               `Based on ${b}${v}${b} (min)\n\n` +
-               `Price = ${b}£${quoteData.price}${b} + vat\n\n` +
-               `⭐ Please let me know ⭐`;
+               `Vehicle: ${b}${v}${b}\n` +
+               `Rate: ${b}£${priceToCopy}${b} + vat\n\n` +
+               `Generated via TCL-MAC Dashboard`;
 
   navigator.clipboard.writeText(text).then(() => {
     const status = document.getElementById('copyStatus');
-    status.textContent = 'Quote copied to clipboard!';
+    status.textContent = `${mode.toUpperCase()} quote copied!`;
     setTimeout(() => status.textContent = '', 2000);
   });
 }
