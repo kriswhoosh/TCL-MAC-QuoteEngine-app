@@ -237,6 +237,27 @@ document.getElementById('btnCalc').onclick = async () => {
     }
 };
 
+    // --- Clear Button Logic ---
+    document.getElementById('btnClear').onclick = () => {
+        // Reset all input fields
+        document.getElementById('pcInput').value = '';
+        document.getElementById('pcA').value = '';
+        document.getElementById('pcB').value = '';
+        document.getElementById('pcVia').value = '';
+        
+        // Reset results and status
+        document.getElementById('status').textContent = 'Waiting for input…';
+        document.getElementById('routeAB').textContent = '';
+        document.getElementById('distance').textContent = '';
+        document.getElementById('duration').textContent = '';
+        
+        // Hide the Rate-Mate card and button
+        document.getElementById('btnRateMate').style.display = 'none';
+        document.getElementById('rateMateCard').style.display = 'none';
+        
+        console.log("App cleared.");
+    };
+
 </script>
   <script src="rate-mate-bridge.js"></script>
 </body>
