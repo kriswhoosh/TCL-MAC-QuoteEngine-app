@@ -65,14 +65,20 @@
   </div>
 
   <script>
-const RATES = { "SV":1.10, "SWB":1.25, "LWB":1.35, "XLWB":1.50, "Luton":1.65, "5t":2.50, "7.5t":2.89, "18t":3.85, "Artic":4.85, "3M+":6.00 };
-const MINS = { "SV":50, "SWB":59, "LWB":69, "XLWB":79, "Luton":99, "5t":199, "7.5t":229, "18t":269, "Artic":289, "3M+":299 };
-const TARIFFS = {
-  "SV":[20,15,12.5,10], "SWB":[22.5,17,14,11.5], "LWB":[24.5,18.5,15.5,12.5], "XLWB":[27.5,20.5,17,13.5],
-  "Luton":[30,22.5,18.5,15], "5t":[45.5,34,28.5,22.5], "7.5t":[52.5,39.5,33,26.5], "18t":[70,52.5,44,35],
-  "Artic":[88,66,55,44], "3M+":[109,82,68,54.5]
-};
+  // TCL Rates (Your Cost)
+  const TCL_RATES = { "SV":1.10, "SWB":1.25, "LWB":1.35, "XLWB":1.50, "Luton":1.65, "5t":2.50, "7.5t":2.90, "18t":3.85, "Artic":4.85, "3M+":6.00 };
+  const TCL_MINS  = { "SV":50, "SWB":59, "LWB":69, "XLWB":79, "Luton":99, "5t":199, "7.5t":229, "18t":269, "Artic":289, "3M+":299 };
 
+  // MAC Rates (Client's Hard-Wired Retail - based on x1.2)
+  const MAC_RATES = { "SV":1.30, "SWB":1.50, "LWB":1.60, "XLWB":1.80, "Luton":2.00, "5t":3.00, "7.5t":3.50, "18t":4.60, "Artic":5.75, "3M+":7.00 };
+  const MAC_MINS  = { "SV":60, "SWB":71, "LWB":83, "XLWB":95, "Luton":119, "5t":239, "7.5t":275, "18t":323, "Artic":347, "3M+":359 };
+
+  // Tariffs remain shared for now, but we'll apply the x1.2 to the MAC calculation
+  const TARIFFS = {
+    "SV":[20,15,12.5,10], "SWB":[22.5,17,14,11.5], "LWB":[24.5,18.5,15.5,12.5], "XLWB":[27.5,20.5,17,13.5],
+    "Luton":[30,22.5,18.5,15], "5t":[45.5,34,28.5,22.5], "7.5t":[52.5,39.5,33,26.5], "18t":[70,52.5,44,35],
+    "Artic":[88,66,55,44], "3M+":[109,82,68,54.5]
+  };  
 let quoteData = { pcA: '', pcB: '', distTxt: '', price: 0, waypointCount: 0, viaText: '' };
 
 function calculate() {
@@ -80,10 +86,9 @@ function calculate() {
   const v = document.getElementById('vehicle').value;
   const stops = quoteData.waypointCount || 0;
 
-  // 1. TCL Base Calculation (Your Rates)
-  let stopFee = 15;
-  if (["Luton","5t","7.5t"].includes(v)) stopFee = 25;
-  if (["18t","Artic","3M+"].includes(v)) stopFee = 40;
+  // Stop Fees
+  let stopFeeTCL = (["Luton","5t","7.5t"].includes(v)) ? 25 : (["18t","Artic","3M+"].includes(v) ? 40 : 15);
+  let stopFeeMAC = Math.round(stopFeeTCL * 1.2); // Hard-wiring the stop fee markup too
 
   let t = 0;
   if (m >= 20 && m < 40) t = TARIFFS[v][0];
@@ -91,19 +96,21 @@ function calculate() {
   else if (m >= 60 && m < 80) t = TARIFFS[v][2];
   else if (m >= 80 && m < 100) t = TARIFFS[v][3];
 
-  const tclRaw = (m * RATES[v]) + t + (stops * stopFee);
-  const tclFinal = Math.round(Math.max(MINS[v], tclRaw));
+  // 1. TCL Calculation (Your Cost)
+  const tclRaw = (m * TCL_RATES[v]) + t + (stops * stopFeeTCL);
+  const tclFinal = Math.round(Math.max(TCL_MINS[v], tclRaw));
 
-  // 2. MAC Calculation (Retail + 20%)
-  const macFinal = Math.round(tclFinal * 1.20);
+  // 2. MAC Calculation (Client Retail - Now Hard-Wired)
+  const macRaw = (m * MAC_RATES[v]) + (t * 1.2) + (stops * stopFeeMAC);
+  const macFinal = Math.round(Math.max(MAC_MINS[v], macRaw));
+
   const margin = macFinal - tclFinal;
 
-  // 3. Update the Dashboard
+  // 3. Update Dashboard
   document.getElementById('tclPrice').textContent = '£' + tclFinal;
   document.getElementById('macPrice').textContent = '£' + macFinal;
   document.getElementById('marginAmt').textContent = '£' + margin;
   
-  // Ensure the copy function uses the higher MAC price
   quoteData.price = macFinal;
 }
 
