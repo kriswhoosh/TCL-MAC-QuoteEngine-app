@@ -59,7 +59,7 @@
         <div style="font-size: 11px; color: #1ec86d; font-weight: bold;">
           PROFIT: <span id="marginAmt">£0</span>
         </div>
-        <button class="btn" onclick="copyQuote('tcl')" style="width: 100%; background: #3a2358;">Copy TCL Quote</button>
+        <button class="btn" onclick="copyQuote('tcl')" style="width: 100%; background: #6c03f7;">Copy TCL Quote</button>
       </div>
     </div>
     <div id="copyStatus" class="copy-msg"></div>
@@ -121,11 +121,10 @@ function calculate() {
 
 function copyQuote(mode) {
   const v = document.getElementById('vehicle').value;
-  // Use lastMacPrice for 'whatsapp' (Retail) and lastTclPrice for 'tcl' (Cost)
-  const priceToCopy = (mode === 'tcl') ? lastTclPrice : lastMacPrice;
-  const quoteSource = (mode === 'tcl') ? "T&C Logistics (Cost)" : "MAC Express (Retail)";
+  const isTCL = (mode === 'tcl');
+  const priceToCopy = isTCL ? lastTclPrice : lastMacPrice;
   
-  // Bold formatting for WhatsApp, plain for others
+  // Use * for bold on WhatsApp (MAC), plain for TCL
   const b = (mode === 'whatsapp') ? '*' : '';
 
   let stopDetails = '';
@@ -134,15 +133,23 @@ function copyQuote(mode) {
     stopDetails = ` (inc. ${quoteData.waypointCount} stop[s]${pcods})`;
   }
 
-  const text = `--- ${quoteSource} ---\n` +
+  // Header Logic
+  const header = isTCL 
+    ? "--- We would like to offer the following ---" 
+    : "Thank you for your enquiry\n\nWe would like to offer the following";
+
+  // Footer Logic
+  const footer = "⭐ Please let me know ⭐";
+
+  const text = `${header}\n\n` +
                `From ${b}${quoteData.pcA}${b} to ${b}${quoteData.pcB}${b} (${quoteData.distTxt})${stopDetails}\n` +
                `Vehicle: ${b}${v}${b}\n` +
                `Rate: ${b}£${priceToCopy}${b} + vat\n\n` +
-               `Generated via TCL-MAC Dashboard`;
+               `${footer}`;
 
   navigator.clipboard.writeText(text).then(() => {
     const status = document.getElementById('copyStatus');
-    status.textContent = `${mode.toUpperCase()} quote copied!`;
+    status.textContent = isTCL ? 'TCL Quote copied!' : 'MAC Quote copied!';
     setTimeout(() => status.textContent = '', 2000);
   });
 }
