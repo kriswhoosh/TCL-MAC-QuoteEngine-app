@@ -187,9 +187,35 @@ document.getElementById('btnCalc').onclick = async () => {
         if (route.code !== 'Ok') throw new Error('Routing failed');
 
         const distMiles = (route.routes[0].distance / 1609.344).toFixed(2);
+        
+        // --- Added: Drive Time Logic ---
+        const seconds = route.routes[0].duration;
+        const hours = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const durationText = hours > 0 ? `${hours}h ${mins}m` : `${mins} mins`;
+        
         document.getElementById('routeAB').textContent = geoPoints.map(g => g.name).join(' → ');
         document.getElementById('distance').textContent = distMiles + ' miles';
+        document.getElementById('duration').textContent = durationText; // Fill the stat box
         window.currentWaypointCount = viaPoints.length;
+
+        // --- Added: Map Links ---
+        const first = geoPoints[0];
+        const last = geoPoints[geoPoints.length - 1];
+        // OSM Link
+        const osmUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${first.lat}%2C${first.lon}%3B${last.lat}%2C${last.lon}`;
+        // Google Maps Link (Simple A to B)
+        const gUrl = `https://www.google.com/maps/dir/${encodeURIComponent(from)}/${encodeURIComponent(to)}`;
+        
+        document.getElementById('status').innerHTML = `
+            Route ready! 
+            <a href="${osmUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;">[OpenStreetMap]</a>
+            <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;">[Google Maps]</a>
+        `;
+
+        if (typeof RateMate !== 'undefined') {
+            RateMate.showButton();
+        }
         
         document.getElementById('status').textContent = 'Route ready!';
         document.getElementById('status').textContent = 'Route ready!';
