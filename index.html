@@ -203,8 +203,10 @@ document.getElementById('btnCalc').onclick = async () => {
         const first = geoPoints[0];
         const last = geoPoints[geoPoints.length - 1];
         // OSM Link
-        const osmUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${first.lat}%2C${first.lon}%3B${last.lat}%2C${last.lon}`;
-                // --- Updated Google Maps Link with Waypoints ---
+        // --- Updated OSM Link with all Waypoints ---
+        const osmCoords = geoPoints.map(g => `${g.lat}%2C${g.lon}`).join('%3B');
+        const osmUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${osmCoords}`;
+        // --- Updated Google Maps Link with Waypoints ---
         const origin = encodeURIComponent(from);
         const destination = encodeURIComponent(to);
         const waypoints = viaPoints.length > 0 ? `&waypoints=${encodeURIComponent(viaPoints.join('|'))}` : '';
