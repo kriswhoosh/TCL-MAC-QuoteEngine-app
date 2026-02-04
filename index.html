@@ -199,11 +199,7 @@ document.getElementById('btnCalc').onclick = async () => {
         document.getElementById('duration').textContent = durationText; // Fill the stat box
         window.currentWaypointCount = viaPoints.length;
 
-        // --- Added: Map Links ---
-        const first = geoPoints[0];
-        const last = geoPoints[geoPoints.length - 1];
-
-        // --- FIXED OSM LINK: Includes all points from start to finish ---
+        // --- Updated OSM Link: Includes ALL points (Start, Vias, and Finish) ---
         const osmCoords = geoPoints.map(g => `${g.lat}%2C${g.lon}`).join('%3B');
         const osmUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${osmCoords}`;
 
