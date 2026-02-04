@@ -209,11 +209,7 @@ document.getElementById('btnCalc').onclick = async () => {
         document.getElementById('duration').textContent = durationText; // Fill the stat box
         window.currentWaypointCount = viaPoints.length;
 
-        // --- Updated OSM Link: Includes ALL points (Start, Vias, and Finish) ---
-        const osmCoords = geoPoints.map(g => `${g.lat}%2C${g.lon}`).join('%3B');
-        const osmUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${osmCoords}`;
-
-        // --- Google Maps Link (already includes waypoints) ---
+        // --- Standardized Google Maps Link (Reliable for all stops) ---
         const origin = encodeURIComponent(from);
         const destination = encodeURIComponent(to);
         const waypoints = viaPoints.length > 0 ? `&waypoints=${encodeURIComponent(viaPoints.join('|'))}` : '';
@@ -221,10 +217,9 @@ document.getElementById('btnCalc').onclick = async () => {
 
         document.getElementById('status').innerHTML = `
             Route ready! 
-            <a href="${osmUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;">[OpenStreetMap]</a>
-            <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;">[Google Maps]</a>
+            <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;text-decoration:underline;">[View Route on Google Maps]</a>
         `;
-
+        
         if (typeof RateMate !== 'undefined') {
             RateMate.showButton();
         }
