@@ -202,16 +202,17 @@ document.getElementById('btnCalc').onclick = async () => {
         // --- Added: Map Links ---
         const first = geoPoints[0];
         const last = geoPoints[geoPoints.length - 1];
-        // OSM Link
-        // --- Updated OSM Link with all Waypoints ---
+
+        // --- FIXED OSM LINK: Includes all points from start to finish ---
         const osmCoords = geoPoints.map(g => `${g.lat}%2C${g.lon}`).join('%3B');
         const osmUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${osmCoords}`;
-        // --- Updated Google Maps Link with Waypoints ---
+
+        // --- Google Maps Link (already includes waypoints) ---
         const origin = encodeURIComponent(from);
         const destination = encodeURIComponent(to);
         const waypoints = viaPoints.length > 0 ? `&waypoints=${encodeURIComponent(viaPoints.join('|'))}` : '';
         const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints}&travelmode=driving`;
-        
+
         document.getElementById('status').innerHTML = `
             Route ready! 
             <a href="${osmUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;">[OpenStreetMap]</a>
