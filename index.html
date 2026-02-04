@@ -204,8 +204,11 @@ document.getElementById('btnCalc').onclick = async () => {
         const last = geoPoints[geoPoints.length - 1];
         // OSM Link
         const osmUrl = `https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${first.lat}%2C${first.lon}%3B${last.lat}%2C${last.lon}`;
-        // Google Maps Link (Simple A to B)
-        const gUrl = `https://www.google.com/maps/dir/${encodeURIComponent(from)}/${encodeURIComponent(to)}`;
+                // --- Updated Google Maps Link with Waypoints ---
+        const origin = encodeURIComponent(from);
+        const destination = encodeURIComponent(to);
+        const waypoints = viaPoints.length > 0 ? `&waypoints=${encodeURIComponent(viaPoints.join('|'))}` : '';
+        const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints}&travelmode=driving`;
         
         document.getElementById('status').innerHTML = `
             Route ready! 

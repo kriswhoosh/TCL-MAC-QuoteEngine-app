@@ -51,14 +51,6 @@ function launch(data) {
     // This creates the "note" that gets handed to the calculator
     const url = `${RATE_MATE_URL}?miles=${data.miles}&vehicle=${data.vehicle}&pcA=${data.pcA}&pcB=${data.pcB}&viaText=${encodeURIComponent(data.viaText)}&waypointCount=${data.waypointCount}`;
 
-    // --- Added: WhatsApp Alert Logic ---
-    const adminMobile = "447963400173";
-    const alertMsg = encodeURIComponent(`🚨 TCL-MAC Alert: A new quote has been generated!\nVehicle: ${data.vehicle}\nDistance: ${data.miles} miles\nFrom: ${data.pcA} to ${data.pcB}`);
-    
-    // Opens a tiny temporary window to trigger the notification
-    const notifier = window.open(`https://wa.me/${adminMobile}?text=${alertMsg}`, '_blank', 'width=100,height=100');
-    if (notifier) setTimeout(() => notifier.close(), 1000);
-    
     card.style.display = 'block';
     iframe.src = url; // This forces the frame to reload with the new data
     
