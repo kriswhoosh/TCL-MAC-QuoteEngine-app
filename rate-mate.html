@@ -16,6 +16,8 @@
     .btn:hover{ opacity: 0.8; }
     .btn.whatsapp{ background: #25D366; color: #075E54; }
     .copy-msg{ font-size: 11px; color: #1ec86d; margin-top: 5px; height: 14px; }
+    /* New Airline Badge style */
+    .surcharge-badge { font-size: 10px; background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 8px; font-weight: bold; letter-spacing: 0.5px; }
   </style>
 </head>
 <body>
@@ -42,6 +44,10 @@
           <label>Miles</label>
           <input id="miles" type="number" step="0.01" oninput="calculate()">
         </div>
+      </div>
+      <!-- Added Visual Indicator for Airline mode -->
+      <div id="airlineStatus" style="display:none;">
+        <span class="surcharge-badge">AIRLINE SURCHARGE ACTIVE (+£80)</span>
       </div>
     </div>
 
@@ -81,7 +87,8 @@ const TARIFFS = {
   "Artic":[88,66,55,44], "3M+":[109,82,68,54.5]
 };
 
-let quoteData = { pcA: '', pcB: '', distTxt: '', waypointCount: 0, viaText: '' };
+// Updated state to include Airline mode
+let quoteData = { pcA: '', pcB: '', distTxt: '', waypointCount: 0, viaText: '', isAirline: false };
 let lastTclPrice = 0;
 let lastMacPrice = 0;
 
@@ -89,6 +96,9 @@ function calculate() {
   const m = parseFloat(document.getElementById('miles').value) || 0;
   const v = document.getElementById('vehicle').value;
   const stops = quoteData.waypointCount || 0;
+  
+  // Apply £80 if Airline mode is active
+  const airlineSurcharge = quoteData.isAirline ? 80 : 0;
 
   // Stop Fees
   let stopFeeTCL = (["Luton","5t","7.5t"].includes(v)) ? 25 : (["18t","Artic","3M+"].includes(v) ? 40 : 15);
@@ -101,11 +111,11 @@ function calculate() {
   else if (m >= 80 && m < 100) t = TARIFFS[v][3];
 
   // 1. TCL Calculation
-  const tclRaw = (m * TCL_RATES[v]) + t + (stops * stopFeeTCL);
+  const tclRaw = (m * TCL_RATES[v]) + t + (stops * stopFeeTCL) + airlineSurcharge;
   const tclFinal = Math.round(Math.max(TCL_MINS[v], tclRaw));
 
   // 2. MAC Calculation
-  const macRaw = (m * MAC_RATES[v]) + (t * 1.2) + (stops * stopFeeMAC);
+  const macRaw = (m * MAC_RATES[v]) + (t * 1.2) + (stops * stopFeeMAC) + airlineSurcharge;
   const macFinal = Math.round(Math.max(MAC_MINS[v], macRaw));
 
   lastTclPrice = tclFinal;
@@ -115,6 +125,9 @@ function calculate() {
   document.getElementById('tclPrice').textContent = '£' + tclFinal;
   document.getElementById('macPrice').textContent = '£' + macFinal;
   document.getElementById('marginAmt').textContent = '£' + margin;
+  
+  // Show/Hide the visual surcharge badge
+  document.getElementById('airlineStatus').style.display = quoteData.isAirline ? 'block' : 'none';
 }
 
 function copyQuote(mode) {
@@ -130,6 +143,9 @@ function copyQuote(mode) {
     const pcods = quoteData.viaText ? ` (${quoteData.viaText})` : '';
     stopDetails = ` (inc. ${quoteData.waypointCount} stop[s]${pcods})`;
   }
+  
+  // Surcharge note for the copied text
+  const airlineNote = quoteData.isAirline ? " (inc. Airline Surcharge)" : "";
 
   // Header Logic
   const header = isTCL 
@@ -141,7 +157,7 @@ function copyQuote(mode) {
   const text = `${header}\n\n` +
                `From ${b}${quoteData.pcA}${b} to ${b}${quoteData.pcB}${b} (${quoteData.distTxt})${stopDetails}\n` +
                `Vehicle: ${b}${v}${b}\n` +
-               `Rate: ${b}£${priceToCopy}${b} + vat\n\n` +
+               `Rate: ${b}£${priceToCopy}${b} + vat${airlineNote}\n\n` +
                `${footer}`;
 
   navigator.clipboard.writeText(text).then(() => {
@@ -161,6 +177,8 @@ window.addEventListener('DOMContentLoaded', () => {
     quoteData.viaText = decodeURIComponent(params.get('viaText') || '');
     quoteData.waypointCount = parseInt(params.get('waypointCount')) || 0;
     quoteData.distTxt = params.get('miles') + ' miles';
+    // Capture Airline state from URL
+    quoteData.isAirline = params.get('isAirline') === 'true';
     calculate();
   }
 });
@@ -174,6 +192,8 @@ window.addEventListener('message', (e) => {
     quoteData.distTxt = e.data.distTxt || '';
     quoteData.waypointCount = e.data.waypointCount || 0;
     quoteData.viaText = e.data.viaText || '';
+    // Update Airline state from PostMessage
+    quoteData.isAirline = e.data.isAirline || false;
     calculate();
   }
 });
