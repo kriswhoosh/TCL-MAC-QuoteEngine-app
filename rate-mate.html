@@ -47,21 +47,21 @@
       </div>
       <!-- Added Visual Indicator for Airline mode -->
       <div id="airlineStatus" style="display:none;">
-        <span class="surcharge-badge">AIRLINE SURCHARGE ACTIVE (+£80)</span>
+        <span class="surcharge-badge">AIRLINE SURCHARGE ACTIVE</span>
       </div>
     </div>
 
     <div style="display: flex; gap: 12px; margin-bottom: 15px;">
       <!-- MAC (Retail) -->
       <div class="card" style="flex: 1; border: 2px solid var(--gold);">
-        <label style="color: var(--gold);">MAC Express (Retail)</label>
+        <label style="color: var(--gold);">MAC Express</label>
         <div class="result" id="macPrice">£0</div>
         <button class="btn whatsapp" onclick="copyQuote('mac')" style="width: 100%;">Copy Quote</button>
       </div>
 
       <!-- TCL (Cost) -->
       <div class="card" style="flex: 1; opacity: 0.9;">
-        <label style="color: #fff;">T&C Logistics (Cost)</label>
+        <label style="color: #fff;">T&C Logistics</label>
         <div class="result" id="tclPrice" style="color: #fff;">£0</div>
         <div style="font-size: 11px; color: #1ec86d; font-weight: bold; margin-bottom: 10px;">
           PROFIT: <span id="marginAmt">£0</span>
@@ -102,7 +102,7 @@ function calculate() {
 
   // Stop Fees
   let stopFeeTCL = (["Luton","5t","7.5t"].includes(v)) ? 25 : (["18t","Artic","3M+"].includes(v) ? 40 : 15);
-  let stopFeeMAC = Math.round(stopFeeTCL * 1.2);
+  let stopFeeMAC = Math.round(stopFeeTCL * 1.0);
 
   let t = 0;
   if (m >= 20 && m < 40) t = TARIFFS[v][0];
@@ -115,7 +115,7 @@ function calculate() {
   const tclFinal = Math.round(Math.max(TCL_MINS[v], tclRaw));
 
   // 2. MAC Calculation
-  const macRaw = (m * MAC_RATES[v]) + (t * 1.2) + (stops * stopFeeMAC) + airlineSurcharge;
+  const macRaw = (m * MAC_RATES[v]) + (t * 1.0) + (stops * stopFeeMAC) + airlineSurcharge;
   const macFinal = Math.round(Math.max(MAC_MINS[v], macRaw));
 
   lastTclPrice = tclFinal;
@@ -136,7 +136,7 @@ function copyQuote(mode) {
   const priceToCopy = isTCL ? lastTclPrice : lastMacPrice;
   
   // WhatsApp bold formatting for MAC only
-  const b = (mode === 'mac') ? '*' : '';
+  const b = (mode === 'mac') ? '' : '';
 
   let stopDetails = '';
   if (quoteData.waypointCount > 0) {
@@ -145,7 +145,7 @@ function copyQuote(mode) {
   }
   
   // Surcharge note for the copied text
-  const airlineNote = quoteData.isAirline ? " (inc. Airline Surcharge)" : "";
+  const airlineNote = quoteData.isAirline ? " (Airline Collection)" : "";
 
   // Header Logic
   const header = isTCL 
