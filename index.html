@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>TCL-MAC Quote Engine</title>
 <link rel="icon" type="image/png" href="jo-jo-san.png">
-<!-- Load the official Google Maps Library -->
-<!-- REPLACE 'Maps_API_KEY_PLACEHOLDER' with your actual API key if not using Cloudflare variables -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyALDdssPzz4tbH_ndit92NHIfP3G3MkoPo&libraries=geometry"></script>
 <style>
   :root{ --bg:#1a0033; --card:#2a0a4a; --muted:#c59fd6; --ink:#f7f7f7; --line:#3a2358; --accent:#22c55e; --pill:#1f2937; --chip:#0e1520; --brand:#ffd94a; --pink:#ff7ab6; --bad:#ef4444; }
   *{box-sizing:border-box}
@@ -27,10 +24,41 @@
   .blue { background-color: #2563eb !important; color: var(--brand) !important; }
   .purple { background: #6d28d9 !important; color: var(--brand) !important; }
   .danger { background: #ef4444 !important; color: #fff !important; }
+  .success { background: #22c55e !important; color: #fff !important; }
   button:hover { opacity: 0.9; }
+
+  /* Settings UI */
+  #settingsBtn { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--card); border: 2px solid var(--pink); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+  #settingsBtn svg { width: 24px; height: 24px; fill: var(--pink); }
+  #apiModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; }
+  .modal-content { background: var(--card); border: 2px solid var(--pink); border-radius: 20px; padding: 25px; width: 90%; max-width: 450px; position: relative; }
+  .modal-content h2 { margin-top: 0; color: var(--brand); font-size: 20px; }
+  .modal-content p { font-size: 13px; color: #ccc; margin-bottom: 20px; line-height: 1.5; }
+  .status-pill { position: fixed; bottom: 25px; right: 80px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+  .status-on { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #4ade80; }
+  .status-off { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #f87171; }
 </style>
 </head>
 <body>
+
+<div id="statusPill" class="status-pill status-off">Google API: OFF</div>
+<button id="settingsBtn" title="API Settings">
+  <svg viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5A3.5 3.5 0 0 1 15.5 12A3.5 3.5 0 0 1 12 15.5M19.43 12.97C19.47 12.65 19.5 12.33 19.5 12C19.5 11.67 19.47 11.35 19.43 11.03L21.54 9.37C21.73 9.22 21.78 8.95 21.66 8.73L19.66 5.27C19.54 5.05 19.27 4.96 19.05 5.05L16.56 6.05C16.04 5.66 15.47 5.34 14.86 5.08L14.48 2.42C14.44 2.18 14.24 2 14 2H10C9.76 2 9.56 2.18 9.52 2.42L9.14 5.08C8.53 5.34 7.96 5.66 7.44 6.05L4.95 5.05C4.73 4.96 4.46 5.05 4.34 5.27L2.34 8.73C2.21 8.95 2.27 9.22 2.46 9.37L4.57 11.03C4.53 11.35 4.5 11.67 4.5 12C4.5 12.33 4.53 12.65 4.57 12.97L2.46 14.63C2.27 14.78 2.21 15.05 2.34 15.27L4.34 18.73C4.46 18.95 4.73 19.03 4.95 18.95L7.44 17.95C7.96 18.34 8.53 18.66 9.14 18.92L9.52 21.58C9.56 21.82 9.76 22 10 22H14C14.24 22 14.44 21.82 14.48 21.58L14.86 18.92C15.47 18.66 16.04 18.34 16.56 17.95L19.05 18.95C19.27 19.03 19.54 18.95 19.66 18.73L21.66 15.27C21.78 15.05 21.73 14.78 21.54 14.63L19.43 12.97Z"/></svg>
+</button>
+
+<div id="apiModal">
+  <div class="modal-content">
+    <h2>Google Maps - API Key</h2>
+    <input type="text" id="apiKeyInput" placeholder="Paste your Google API key here">
+    <p>Your key is stored <strong>locally in this browser</strong> (localStorage). It never touches GitHub. Ensure it has: <strong>Directions API, Geocoding API</strong>.</p>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="danger" onclick="removeKey()">Remove Key</button>
+      <button class="success" onclick="saveAndActivate()">Save & Activate</button>
+      <button class="btn" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
   <header><h1><strong>TCL-MAC Quote Engine</strong></h1><div style="color:#ff7ab6;font-weight:700;margin-top:4px">Another Kriswhoosh Project</div></header>
 
@@ -90,6 +118,48 @@
 </div>
 
 <script>
+// --- API Settings Logic ---
+const STORAGE_KEY = 'tcl_mac_google_key';
+
+function initAPI() {
+    const savedKey = localStorage.getItem(STORAGE_KEY);
+    if (savedKey) {
+        loadGoogleScript(savedKey);
+        document.getElementById('statusPill').textContent = 'Google API: ON';
+        document.getElementById('statusPill').className = 'status-pill status-on';
+        document.getElementById('apiKeyInput').value = savedKey;
+    }
+}
+
+function loadGoogleScript(key) {
+    if (window.google && window.google.maps) return;
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=geometry`;
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+}
+
+function saveAndActivate() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (!key) return;
+    localStorage.setItem(STORAGE_KEY, key);
+    location.reload(); // Reload to initialize with new key
+}
+
+function removeKey() {
+    localStorage.removeItem(STORAGE_KEY);
+    location.reload();
+}
+
+function openModal() { document.getElementById('apiModal').style.display = 'flex'; }
+function closeModal() { document.getElementById('apiModal').style.display = 'none'; }
+document.getElementById('settingsBtn').onclick = openModal;
+
+// Initialize on load
+initAPI();
+
+// --- Routing Logic ---
 window.selectVeh = function(btn, val) {
     const allChips = document.querySelectorAll('#vehicleSelectors .chip');
     allChips.forEach(c => {
@@ -109,7 +179,8 @@ document.getElementById('btnCalc').onclick = function() {
     if(!from || !to) return;
     
     if(typeof google === 'undefined' || typeof google.maps === 'undefined') {
-        document.getElementById('status').textContent = 'Error: Google Maps script failed to load. Ensure your key is valid.';
+        document.getElementById('status').textContent = 'Error: Google API not active. Use the gear icon to set your key.';
+        openModal();
         return;
     }
 
