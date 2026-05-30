@@ -16,13 +16,12 @@
     .btn:hover{ opacity: 0.8; }
     .btn.whatsapp{ background: #25D366; color: #075E54; }
     .copy-msg{ font-size: 11px; color: #1ec86d; margin-top: 5px; height: 14px; }
-    /* New Airline Badge style */
-    .surcharge-badge { font-size: 10px; background: #2563eb; color: white; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 8px; font-weight: bold; letter-spacing: 0.5px; }
+    /* Dynamic Badge Styling */
+    .surcharge-badge { font-size: 10px; color: white; padding: 4px 8px; border-radius: 4px; display: inline-block; margin: 3px; font-weight: bold; letter-spacing: 0.5px; }
   </style>
 </head>
 <body>
-  <header><H1><strong><div>TCL-MAC DASHBOARD</div></strong></H1></header>
-  <div class="wrap" style="max-width: 600px;">
+<header><H1><strong><div>TCL RATE-MATE DASHBOARD</div></strong></H1></header>  <div class="wrap" style="max-width: 600px;">
     <div class="card" style="margin-bottom: 15px;">
       <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
@@ -45,21 +44,17 @@
           <input id="miles" type="number" step="0.01" oninput="calculate()">
         </div>
       </div>
-      <!-- Added Visual Indicator for Airline mode -->
-      <div id="airlineStatus" style="display:none;">
-        <span class="surcharge-badge">AIRLINE SURCHARGE ACTIVE</span>
-      </div>
+      
+      <div id="airlineStatus" style="display:none; margin-top: 10px;"></div>
     </div>
 
     <div style="display: flex; gap: 12px; margin-bottom: 15px;">
-      <!-- MAC (Retail) -->
       <div class="card" style="flex: 1; border: 2px solid var(--gold);">
         <label style="color: var(--gold);">Industry Rate</label>
         <div class="result" id="macPrice">£0</div>
         <button class="btn whatsapp" onclick="copyQuote('mac')" style="width: 100%;">Copy Quote</button>
       </div>
 
-      <!-- TCL (Cost) -->
       <div class="card" style="flex: 1; opacity: 0.9;">
         <label style="color: #fff;">T&C Logistics</label>
         <div class="result" id="tclPrice" style="color: #fff;">£0</div>
@@ -87,8 +82,11 @@ const TARIFFS = {
   "Artic":[88,66,55,44], "3M+":[109,82,68,54.5]
 };
 
-// Updated state to include Airline mode
-let quoteData = { pcA: '', pcB: '', distTxt: '', waypointCount: 0, viaText: '', isAirline: false };
+let quoteData = { 
+    pcA: '', pcB: '', distTxt: '', waypointCount: 0, viaText: '', 
+    isAirline: false, isTemp: false, isFlatbed: false, isUlez: false, isOther: false, 
+    otherText: '', otherValue: 0 
+};
 let lastTclPrice = 0;
 let lastMacPrice = 0;
 
@@ -97,9 +95,6 @@ function calculate() {
   const v = document.getElementById('vehicle').value;
   const stops = quoteData.waypointCount || 0;
   
-  // Apply £80 if Airline mode is active
-  const airlineSurcharge = quoteData.isAirline ? 80 : 0;
-
   // Stop Fees
   let stopFeeTCL = (["Luton","5t","7.5t"].includes(v)) ? 25 : (["18t","Artic","3M+"].includes(v) ? 40 : 15);
   let stopFeeMAC = Math.round(stopFeeTCL * 1.0);
@@ -110,13 +105,25 @@ function calculate() {
   else if (m >= 60 && m < 80) t = TARIFFS[v][2];
   else if (m >= 80 && m < 100) t = TARIFFS[v][3];
 
-  // 1. TCL Calculation
-  const tclRaw = (m * TCL_RATES[v]) + t + (stops * stopFeeTCL) + airlineSurcharge;
-  const tclFinal = Math.round(Math.max(TCL_MINS[v], tclRaw));
+  // 1. Establish the base calculated value of the trip (including stops & minimum floors)
+  let tclBase = Math.max(TCL_MINS[v], (m * TCL_RATES[v]) + t + (stops * stopFeeTCL));
+  let macBase = Math.max(MAC_MINS[v], (m * MAC_RATES[v]) + (t * 1.0) + (stops * stopFeeMAC));
 
-  // 2. MAC Calculation
-  const macRaw = (m * MAC_RATES[v]) + (t * 1.0) + (stops * stopFeeMAC) + airlineSurcharge;
-  const macFinal = Math.round(Math.max(MAC_MINS[v], macRaw));
+  // 2. Apply Surcharge Multipliers to the base trip value
+  if (quoteData.isTemp) { tclBase *= 2.25; macBase *= 2.25; }
+  if (quoteData.isFlatbed) { tclBase *= 3; macBase *= 3; }
+
+  // 3. Apply Flat Fee Additions on top
+  if (quoteData.isAirline) { tclBase += 80; macBase += 80; }
+  if (quoteData.isUlez) { tclBase += 25; macBase += 25; }
+  if (quoteData.isOther) { 
+      tclBase += quoteData.otherValue; 
+      macBase += quoteData.otherValue; 
+  }
+
+  // 4. Final rounding
+  const tclFinal = Math.round(tclBase);
+  const macFinal = Math.round(macBase);
 
   lastTclPrice = tclFinal;
   lastMacPrice = macFinal;
@@ -126,8 +133,20 @@ function calculate() {
   document.getElementById('macPrice').textContent = '£' + macFinal;
   document.getElementById('marginAmt').textContent = '£' + margin;
   
-  // Show/Hide the visual surcharge badge
-  document.getElementById('airlineStatus').style.display = quoteData.isAirline ? 'block' : 'none';
+  // UI: Show/Hide Visual Badges
+  const container = document.getElementById('airlineStatus');
+  container.innerHTML = '';
+  let hasSurcharge = false;
+  
+  if (quoteData.isTemp) { container.innerHTML += '<span class="surcharge-badge" style="background:#8b5cf6;">TEMP CONTROL (x2.25)</span>'; hasSurcharge = true; }
+  if (quoteData.isFlatbed) { container.innerHTML += '<span class="surcharge-badge" style="background:#f59e0b;">FLAT BED (x3)</span>'; hasSurcharge = true; }
+  if (quoteData.isAirline) { container.innerHTML += '<span class="surcharge-badge" style="background:#2563eb;">AIRLINE (+£80)</span>'; hasSurcharge = true; }
+  if (quoteData.isUlez) { container.innerHTML += '<span class="surcharge-badge" style="background:#10b981;">ULEZ (+£25)</span>'; hasSurcharge = true; }
+  if (quoteData.isOther && quoteData.otherText) { 
+      container.innerHTML += `<span class="surcharge-badge" style="background:#ec4899;">${quoteData.otherText.toUpperCase()} (+£${quoteData.otherValue})</span>`; 
+      hasSurcharge = true; 
+  }
+  container.style.display = hasSurcharge ? 'block' : 'none';
 }
 
 function copyQuote(mode) {
@@ -135,8 +154,7 @@ function copyQuote(mode) {
   const isTCL = (mode === 'tcl');
   const priceToCopy = isTCL ? lastTclPrice : lastMacPrice;
   
-  // WhatsApp bold formatting for MAC only
-  const b = (mode === 'mac') ? '' : '';
+  const b = '';
 
   let stopDetails = '';
   if (quoteData.waypointCount > 0) {
@@ -144,8 +162,15 @@ function copyQuote(mode) {
     stopDetails = ` (inc. ${quoteData.waypointCount} stop[s]${pcods})`;
   }
   
-  // Surcharge note for the copied text
-  const airlineNote = quoteData.isAirline ? " (Airline Collection)" : "";
+  // Generate Surcharge notes for copied text
+  let extras = [];
+  if (quoteData.isTemp) extras.push("Temp Control");
+  if (quoteData.isFlatbed) extras.push("Flat Bed");
+  if (quoteData.isAirline) extras.push("Airline Collection");
+  if (quoteData.isUlez) extras.push("ULEZ");
+  if (quoteData.isOther && quoteData.otherText) extras.push(`${quoteData.otherText}`);
+
+  const extraText = extras.length > 0 ? `\nIncludes: ${extras.join(', ')}` : "";
 
   // Header Logic
   const header = isTCL 
@@ -154,10 +179,11 @@ function copyQuote(mode) {
 
   const footer = "⭐ Please let me know ⭐";
 
+  // MILEAGE REMOVED FROM THIS BLOCK
   const text = `${header}\n\n` +
-               `From ${b}${quoteData.pcA}${b} to ${b}${quoteData.pcB}${b} (${quoteData.distTxt})${stopDetails}\n` +
+               `From ${b}${quoteData.pcA}${b} to ${b}${quoteData.pcB}${b}${stopDetails}\n` +
                `Vehicle: ${b}${v}${b}\n` +
-               `Rate: ${b}£${priceToCopy}${b} + vat${airlineNote}\n\n` +
+               `Rate: ${b}£${priceToCopy}${b} + vat${extraText}\n\n` +
                `${footer}`;
 
   navigator.clipboard.writeText(text).then(() => {
@@ -177,8 +203,16 @@ window.addEventListener('DOMContentLoaded', () => {
     quoteData.viaText = decodeURIComponent(params.get('viaText') || '');
     quoteData.waypointCount = parseInt(params.get('waypointCount')) || 0;
     quoteData.distTxt = params.get('miles') + ' miles';
-    // Capture Airline state from URL
+    
+    // Capture Surcharge states from URL
     quoteData.isAirline = params.get('isAirline') === 'true';
+    quoteData.isTemp = params.get('isTemp') === 'true';
+    quoteData.isFlatbed = params.get('isFlatbed') === 'true';
+    quoteData.isUlez = params.get('isUlez') === 'true';
+    quoteData.isOther = params.get('isOther') === 'true';
+    quoteData.otherText = decodeURIComponent(params.get('otherText') || '');
+    quoteData.otherValue = parseFloat(params.get('otherValue')) || 0;
+    
     calculate();
   }
 });
@@ -192,8 +226,16 @@ window.addEventListener('message', (e) => {
     quoteData.distTxt = e.data.distTxt || '';
     quoteData.waypointCount = e.data.waypointCount || 0;
     quoteData.viaText = e.data.viaText || '';
-    // Update Airline state from PostMessage
+    
+    // Update Surcharge states from PostMessage
     quoteData.isAirline = e.data.isAirline || false;
+    quoteData.isTemp = e.data.isTemp || false;
+    quoteData.isFlatbed = e.data.isFlatbed || false;
+    quoteData.isUlez = e.data.isUlez || false;
+    quoteData.isOther = e.data.isOther || false;
+    quoteData.otherText = e.data.otherText || '';
+    quoteData.otherValue = e.data.otherValue || 0;
+    
     calculate();
   }
 });

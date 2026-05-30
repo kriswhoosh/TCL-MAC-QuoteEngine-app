@@ -15,7 +15,7 @@
   .card{background:#151c24;border:1px solid #233141;border-radius:14px;padding:14px;margin:12px 0;color:#ff7ab6;text-align:center}
   .card h3{color:#ffd94a;margin:0 0 8px}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;text-align:left}
-  input[type=text]{width:100%;background:#0e1520;color:#e6eefc;border:1px solid #233141;border-radius:10px;padding:10px 12px;font-size:14px;outline:0;text-align:left}
+  input[type=text], input[type=number]{width:100%;background:#0e1520;color:#e6eefc;border:1px solid #233141;border-radius:10px;padding:10px 12px;font-size:14px;outline:0;text-align:left}
   button{padding:10px 14px;border:0;border-radius:10px;font-weight:700;cursor:pointer;color:#ffd94a}
   .btn{background:#1f2937;color:#ffd94a;border:1px solid #233141}.swap{background:#374151;color:#ffd94a}
   .stat{background:#0e1520;border:1px solid #233141;border-radius:10px;padding:10px;margin:8px 0}
@@ -38,7 +38,7 @@
   .status-on { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #4ade80; }
   .status-off { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #f87171; }
   
-  .chip.active { background: #2563eb; color: #fff; border-color: #3b82f6; outline: 2px solid #ffd400; }
+  .chip.active { background: #2563eb; color: #fff !important; border-color: #3b82f6 !important; outline: 2px solid #ffd400; }
 </style>
 </head>
 <body>
@@ -64,8 +64,6 @@
 <div class="wrap">
   <header><h1><strong>T&C Logistics QUOTE ENGINE</strong></h1><div style="color:#ff7ab6;font-weight:700;margin-top:4px">Another Kriswhoosh Project</div></header>
 
-  <div class="card"><div class="chips" id="routeChips"><span class="hint">↓ Enter postcodes below and click Calculate ↓</span></div></div>
-
   <div class="card" id="manualCard">
     <h3>Manual Fields</h3>
     <div class="row">
@@ -73,12 +71,12 @@
       <div><label><small>To (B)</small></label><input id="pcB" type="text" placeholder="Postcode"></div>
     </div>
     
-    <div style="margin-top:8px">
+    <div style="margin-top:8px; text-align:left;">
       <label><small style="color:var(--pink)">Waypoints (Via) - Separate with commas</small></label>
       <input id="pcVia" type="text" placeholder="e.g., DY10 4JB, B71 4EX">
     </div>
     
-    <div style="margin-top:12px">
+    <div style="margin-top:12px; text-align:left;">
       <label><small>Select Required Vehicle & Options</small></label>
       <div class="chips" id="vehicleSelectors" style="margin-top:8px; justify-content: flex-start;">
         <button type="button" class="chip" onclick="selectVeh(this, 'SV')">SV</button>
@@ -91,14 +89,31 @@
         <button type="button" class="chip" onclick="selectVeh(this, '18t')">18t</button>
         <button type="button" class="chip" onclick="selectVeh(this, 'Artic')">Artic</button>
         <button type="button" class="chip" onclick="selectVeh(this, '3M+')">3M+</button>
-        <div style="width: 2px; height: 20px; background: var(--line); margin: 0 4px;"></div>
-        <button type="button" class="chip" id="airlineChip" onclick="toggleAirline()" style="border: 1px solid var(--pink); color: var(--pink);">AIRLINE?</button>
       </div>
+
+      <div class="chips" id="surchargeSelectors" style="margin-top:12px; justify-content: flex-start;">
+        <div style="width: 2px; height: 20px; background: var(--line); margin: 0 4px;"></div>
+        <button type="button" class="chip" id="airlineChip" onclick="toggleSurcharge('Airline')" style="border: 1px solid var(--pink); color: var(--pink);">AIRLINE?</button>
+        <button type="button" class="chip" id="tempChip" onclick="toggleSurcharge('Temp')" style="border: 1px solid var(--pink); color: var(--pink);">TEMP CTRL</button>
+        <button type="button" class="chip" id="flatbedChip" onclick="toggleSurcharge('Flatbed')" style="border: 1px solid var(--pink); color: var(--pink);">FLAT BED</button>
+        <button type="button" class="chip" id="ulezChip" onclick="toggleSurcharge('Ulez')" style="border: 1px solid var(--pink); color: var(--pink);">ULEZ</button>
+        <button type="button" class="chip" id="otherChip" onclick="toggleSurcharge('Other')" style="border: 1px solid var(--pink); color: var(--pink);">OTHER</button>
+      </div>
+
+      <div id="otherInputRow" style="display:none; margin-top:12px; grid-template-columns: 2fr 1fr; gap: 12px; text-align: left;">
+        <div><label><small style="color:var(--brand)">Other Detail</small></label><input id="otherText" type="text" placeholder="e.g., Ferry, Toll" oninput="updateRateMate()"></div>
+        <div><label><small style="color:var(--brand)">Value (£)</small></label><input id="otherValue" type="number" placeholder="0" oninput="updateRateMate()"></div>
+      </div>
+
       <input type="hidden" id="suggestedVehicle" value="LWB">
       <input type="hidden" id="isAirline" value="false">
+      <input type="hidden" id="isTemp" value="false">
+      <input type="hidden" id="isFlatbed" value="false">
+      <input type="hidden" id="isUlez" value="false">
+      <input type="hidden" id="isOther" value="false">
     </div>
     
-    <div style="margin-top:10px" class="actions">
+    <div style="margin-top:16px" class="actions">
       <button class="blue" id="btnCalc">Calculate Route</button>
       <button class="purple" id="btnRateMate" style="display:none">Let's RATE-MATE it</button>
       <button class="swap" id="btnSwap">Swap A ↔ B</button>
@@ -119,7 +134,6 @@
     <iframe id="rateMateFrame" style="width:100%;height:650px;border:none;border-radius:10px"></iframe>
   </div>
 
-  <details class="card"><summary>Debug</summary><pre id="debug">Ready.</pre></details>
 </div>
 
 <script>
@@ -149,7 +163,7 @@ function saveAndActivate() {
     const key = document.getElementById('apiKeyInput').value.trim();
     if (!key) return;
     localStorage.setItem(STORAGE_KEY, key);
-    location.reload(); // Reload to initialize with new key
+    location.reload();
 }
 
 function removeKey() {
@@ -161,12 +175,11 @@ function openModal() { document.getElementById('apiModal').style.display = 'flex
 function closeModal() { document.getElementById('apiModal').style.display = 'none'; }
 document.getElementById('settingsBtn').onclick = openModal;
 
-// Initialize on load
 initAPI();
 
-// --- Routing Logic ---
+// --- Routing & Surcharge Logic ---
 window.selectVeh = function(btn, val) {
-    const allChips = document.querySelectorAll('#vehicleSelectors .chip:not(#airlineChip)');
+    const allChips = document.querySelectorAll('#vehicleSelectors .chip');
     allChips.forEach(c => {
         c.style.outline = 'none';
         c.style.background = 'rgba(255,255,255,0.05)';
@@ -174,88 +187,103 @@ window.selectVeh = function(btn, val) {
     btn.style.outline = '2px solid #ffd400';
     btn.style.background = 'rgba(255,212,0,0.2)';
     document.getElementById('suggestedVehicle').value = val;
+    updateRateMate();
 };
 
-window.toggleAirline = function() {
-    const chip = document.getElementById('airlineChip');
-    const input = document.getElementById('isAirline');
+window.toggleSurcharge = function(type) {
+    const chip = document.getElementById(type.toLowerCase() + 'Chip');
+    const input = document.getElementById('is' + type);
     const isActive = input.value === 'true';
     
     if (isActive) {
         input.value = 'false';
         chip.classList.remove('active');
+        if(type === 'Other') document.getElementById('otherInputRow').style.display = 'none';
     } else {
         input.value = 'true';
         chip.classList.add('active');
+        if(type === 'Other') document.getElementById('otherInputRow').style.display = 'grid';
     }
-    
-    // If rate-mate is already open, recalculate
+    updateRateMate();
+};
+
+window.updateRateMate = function() {
     if (document.getElementById('rateMateCard').style.display === 'block') {
-        const frame = document.getElementById('rateMateFrame');
-        if (frame.contentWindow && typeof RateMate !== 'undefined') {
-            RateMate.showButton(); // Re-sends data
-        }
+        if (typeof RateMate !== 'undefined') RateMate.showButton(); 
     }
 };
 
 document.getElementById('btnCalc').onclick = function() {
-    const from = document.getElementById('pcA').value.trim();
-    const to = document.getElementById('pcB').value.trim();
-    const viaRaw = document.getElementById('pcVia').value.trim();
-    
-    if(!from || !to) return;
-    
-    if(typeof google === 'undefined' || typeof google.maps === 'undefined') {
-        document.getElementById('status').textContent = 'Error: Google API not active. Use the gear icon to set your key.';
-        openModal();
-        return;
-    }
-
-    const viaPoints = viaRaw ? viaRaw.split(',').map(p => p.trim()).filter(p => p) : [];
-    document.getElementById('status').textContent = 'Calculating via Google...';
-
-    const directionsService = new google.maps.DirectionsService();
-    
-    const request = {
-        origin: from,
-        destination: to,
-        waypoints: viaPoints.map(v => ({ location: v, stopover: true })),
-        travelMode: google.maps.TravelMode.DRIVING,
-        unitSystem: google.maps.UnitSystem.IMPERIAL
-    };
-
-    directionsService.route(request, (result, status) => {
-        if (status === 'OK') {
-            const route = result.routes[0];
-            let totalDist = 0;
-            let totalTime = 0;
-            let names = [];
-
-            route.legs.forEach((leg, i) => {
-                totalDist += leg.distance.value;
-                totalTime += leg.duration.value;
-                names.push(leg.start_address.split(',')[0]);
-                if (i === route.legs.length - 1) names.push(leg.end_address.split(',')[0]);
-            });
-
-            const miles = (totalDist / 1609.34).toFixed(2);
-            const hrs = Math.floor(totalTime / 3600);
-            const mins = Math.floor((totalTime % 3600) / 60);
-            const durationText = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`;
-
-            document.getElementById('routeAB').textContent = names.join(' → ');
-            document.getElementById('distance').textContent = miles + ' miles';
-            document.getElementById('duration').textContent = durationText;
-            window.currentWaypointCount = viaPoints.length;
-
-            const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}&waypoints=${encodeURIComponent(viaPoints.join('|'))}&travelmode=driving`;
-            document.getElementById('status').innerHTML = `Route ready! <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;text-decoration:underline;">[View Route on Google Maps]</a>`;
-
-            if (typeof RateMate !== 'undefined') RateMate.showButton();
-        } else {
-            document.getElementById('status').textContent = 'Error: ' + status;
+    try {
+        const from = document.getElementById('pcA').value.trim();
+        const to = document.getElementById('pcB').value.trim();
+        const viaRaw = document.getElementById('pcVia').value.trim();
+        
+        if(!from || !to) return;
+        
+        // Error Catching: Ensure Google Maps and DirectionsService are fully loaded before firing
+        if(typeof google === 'undefined' || typeof google.maps === 'undefined' || typeof google.maps.DirectionsService === 'undefined') {
+            document.getElementById('status').textContent = 'Error: Google API is still loading or blocked by your browser. Please check your API key.';
+            openModal();
+            return;
         }
-    });
+
+        const viaPoints = viaRaw ? viaRaw.split(',').map(p => p.trim()).filter(p => p) : [];
+        document.getElementById('status').textContent = 'Calculating via Google...';
+
+        const directionsService = new google.maps.DirectionsService();
+        
+        const request = {
+            origin: from,
+            destination: to,
+            waypoints: viaPoints.map(v => ({ location: v, stopover: true })),
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: google.maps.UnitSystem.IMPERIAL
+        };
+
+        directionsService.route(request, (result, status) => {
+            try {
+                if (status === 'OK') {
+                    const route = result.routes[0];
+                    let totalDist = 0;
+                    let totalTime = 0;
+                    let names = [];
+
+                    route.legs.forEach((leg, i) => {
+                        totalDist += leg.distance.value;
+                        totalTime += leg.duration.value;
+                        names.push(leg.start_address.split(',')[0]);
+                        if (i === route.legs.length - 1) names.push(leg.end_address.split(',')[0]);
+                    });
+
+                    const miles = (totalDist / 1609.34).toFixed(2);
+                    
+                    const adjustedTime = totalTime * 1.1; 
+                    const hrs = Math.floor(adjustedTime / 3600);
+                    const mins = Math.floor((adjustedTime % 3600) / 60);
+                    const durationText = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`;
+
+                    document.getElementById('routeAB').textContent = names.join(' → ');
+                    document.getElementById('distance').textContent = miles + ' miles';
+                    document.getElementById('duration').textContent = durationText;
+                    window.currentWaypointCount = viaPoints.length;
+
+                    // Fixed Map URL string
+                    const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}&waypoints=${encodeURIComponent(viaPoints.join('|'))}&travelmode=driving`;
+                    document.getElementById('status').innerHTML = `Route ready! <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;text-decoration:underline;">[View Route on Google Maps]</a>`;
+
+                    if (typeof RateMate !== 'undefined') RateMate.showButton();
+                } else {
+                    // This will catch REQUEST_DENIED errors (like local referer blocks)
+                    document.getElementById('status').textContent = 'Google API Error: ' + status;
+                }
+            } catch (err) {
+                document.getElementById('status').textContent = 'Calculation Parsing Error: ' + err.message;
+            }
+        });
+    } catch (err) {
+        document.getElementById('status').textContent = 'System Error: ' + err.message;
+    }
 };
 
 document.getElementById('btnSwap').onclick = () => {
@@ -269,8 +297,17 @@ document.getElementById('btnClear').onclick = () => {
     document.getElementById('pcA').value = '';
     document.getElementById('pcB').value = '';
     document.getElementById('pcVia').value = '';
-    document.getElementById('isAirline').value = 'false';
-    document.getElementById('airlineChip').classList.remove('active');
+    
+    // Reset all Surcharges
+    ['Airline', 'Temp', 'Flatbed', 'Ulez', 'Other'].forEach(type => {
+        document.getElementById('is' + type).value = 'false';
+        document.getElementById(type.toLowerCase() + 'Chip').classList.remove('active');
+    });
+    
+    document.getElementById('otherInputRow').style.display = 'none';
+    document.getElementById('otherText').value = '';
+    document.getElementById('otherValue').value = '';
+    
     document.getElementById('status').textContent = 'Waiting for input…';
     document.getElementById('routeAB').textContent = '';
     document.getElementById('distance').textContent = '';
