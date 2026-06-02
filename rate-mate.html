@@ -84,7 +84,7 @@ const TARIFFS = {
 
 let quoteData = { 
     pcA: '', pcB: '', distTxt: '', waypointCount: 0, viaText: '', 
-    isAirline: false, isTemp: false, isFlatbed: false, isUlez: false, isOther: false, 
+    isAirline: false, isTemp: false, isFlatbed: false, isAdr: false, isUlez: false, isOther: false, 
     otherText: '', otherValue: 0 
 };
 let lastTclPrice = 0;
@@ -109,9 +109,10 @@ function calculate() {
   let tclBase = Math.max(TCL_MINS[v], (m * TCL_RATES[v]) + t + (stops * stopFeeTCL));
   let macBase = Math.max(MAC_MINS[v], (m * MAC_RATES[v]) + (t * 1.0) + (stops * stopFeeMAC));
 
-  // 2. Apply Surcharge Multipliers to the base trip value
+ // 2. Apply Surcharge Multipliers to the base trip value
   if (quoteData.isTemp) { tclBase *= 2.25; macBase *= 2.25; }
   if (quoteData.isFlatbed) { tclBase *= 3; macBase *= 3; }
+  if (quoteData.isAdr) { tclBase *= 2.25; macBase *= 2.25; }
 
   // 3. Apply Flat Fee Additions on top
   if (quoteData.isAirline) { tclBase += 80; macBase += 80; }
@@ -140,6 +141,7 @@ function calculate() {
   
   if (quoteData.isTemp) { container.innerHTML += '<span class="surcharge-badge" style="background:#8b5cf6;">TEMP CONTROL (x2.25)</span>'; hasSurcharge = true; }
   if (quoteData.isFlatbed) { container.innerHTML += '<span class="surcharge-badge" style="background:#f59e0b;">FLAT BED (x3)</span>'; hasSurcharge = true; }
+  if (quoteData.isAdr) { container.innerHTML += '<span class="surcharge-badge" style="background:#dc2626;">ADR (x2.25)</span>'; hasSurcharge = true; }
   if (quoteData.isAirline) { container.innerHTML += '<span class="surcharge-badge" style="background:#2563eb;">AIRLINE (+£80)</span>'; hasSurcharge = true; }
   if (quoteData.isUlez) { container.innerHTML += '<span class="surcharge-badge" style="background:#10b981;">ULEZ (+£25)</span>'; hasSurcharge = true; }
   if (quoteData.isOther && quoteData.otherText) { 
@@ -163,9 +165,11 @@ function copyQuote(mode) {
   }
   
   // Generate Surcharge notes for copied text
+  // Generate Surcharge notes for copied text
   let extras = [];
   if (quoteData.isTemp) extras.push("Temp Control");
   if (quoteData.isFlatbed) extras.push("Flat Bed");
+  if (quoteData.isAdr) extras.push("ADR");
   if (quoteData.isAirline) extras.push("Airline Collection");
   if (quoteData.isUlez) extras.push("ULEZ");
   if (quoteData.isOther && quoteData.otherText) extras.push(`${quoteData.otherText}`);
@@ -208,6 +212,7 @@ window.addEventListener('DOMContentLoaded', () => {
     quoteData.isAirline = params.get('isAirline') === 'true';
     quoteData.isTemp = params.get('isTemp') === 'true';
     quoteData.isFlatbed = params.get('isFlatbed') === 'true';
+    quoteData.isAdr = params.get('isAdr') === 'true';
     quoteData.isUlez = params.get('isUlez') === 'true';
     quoteData.isOther = params.get('isOther') === 'true';
     quoteData.otherText = decodeURIComponent(params.get('otherText') || '');
@@ -231,6 +236,7 @@ window.addEventListener('message', (e) => {
     quoteData.isAirline = e.data.isAirline || false;
     quoteData.isTemp = e.data.isTemp || false;
     quoteData.isFlatbed = e.data.isFlatbed || false;
+    quoteData.isAdr = e.data.isAdr || false;
     quoteData.isUlez = e.data.isUlez || false;
     quoteData.isOther = e.data.isOther || false;
     quoteData.otherText = e.data.otherText || '';

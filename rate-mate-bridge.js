@@ -23,12 +23,13 @@ const RateMate = (() => {
       const isAirline = document.getElementById('isAirline')?.value === 'true';
       const isTemp = document.getElementById('isTemp')?.value === 'true';
       const isFlatbed = document.getElementById('isFlatbed')?.value === 'true';
+      const isAdr = document.getElementById('isAdr')?.value === 'true';
       const isUlez = document.getElementById('isUlez')?.value === 'true';
       const isOther = document.getElementById('isOther')?.value === 'true';
       const otherText = document.getElementById('otherText')?.value || '';
       const otherValue = parseFloat(document.getElementById('otherValue')?.value) || 0;
       
-      launch({ miles, vehicle, pcA, pcB, distTxt, waypointCount, viaText, isAirline, isTemp, isFlatbed, isUlez, isOther, otherText, otherValue });
+      launch({ miles, vehicle, pcA, pcB, distTxt, waypointCount, viaText, isAirline, isTemp, isFlatbed, isAdr, isUlez, isOther, otherText, otherValue });
     });
     initialized = true;
   }
@@ -53,7 +54,7 @@ function launch(data) {
     if (!card || !iframe) return;
 
     // Send all new variables securely through the URL parameters
-    const url = `${RATE_MATE_URL}?miles=${data.miles}&vehicle=${data.vehicle}&pcA=${data.pcA}&pcB=${data.pcB}&viaText=${encodeURIComponent(data.viaText)}&waypointCount=${data.waypointCount}&isAirline=${data.isAirline}&isTemp=${data.isTemp}&isFlatbed=${data.isFlatbed}&isUlez=${data.isUlez}&isOther=${data.isOther}&otherText=${encodeURIComponent(data.otherText)}&otherValue=${data.otherValue}`;
+    const url = `${RATE_MATE_URL}?miles=${data.miles}&vehicle=${data.vehicle}&pcA=${data.pcA}&pcB=${data.pcB}&viaText=${encodeURIComponent(data.viaText)}&waypointCount=${data.waypointCount}&isAirline=${data.isAirline}&isTemp=${data.isTemp}&isFlatbed=${data.isFlatbed}&isAdr=${data.isAdr}&isUlez=${data.isUlez}&isOther=${data.isOther}&otherText=${encodeURIComponent(data.otherText)}&otherValue=${data.otherValue}`;
 
     card.style.display = 'block';
     iframe.src = url; 
@@ -80,12 +81,13 @@ function launch(data) {
              const isAirline = document.getElementById('isAirline')?.value === 'true';
              const isTemp = document.getElementById('isTemp')?.value === 'true';
              const isFlatbed = document.getElementById('isFlatbed')?.value === 'true';
+             const isAdr = document.getElementById('isAdr')?.value === 'true';
              const isUlez = document.getElementById('isUlez')?.value === 'true';
              const isOther = document.getElementById('isOther')?.value === 'true';
              const otherText = document.getElementById('otherText')?.value || '';
              const otherValue = parseFloat(document.getElementById('otherValue')?.value) || 0;
 
-             launch({ miles, vehicle, pcA, pcB, waypointCount, viaText, isAirline, isTemp, isFlatbed, isUlez, isOther, otherText, otherValue });
+             launch({ miles, vehicle, pcA, pcB, waypointCount, viaText, isAirline, isTemp, isFlatbed, isAdr, isUlez, isOther, otherText, otherValue });
         }
     } 
   };

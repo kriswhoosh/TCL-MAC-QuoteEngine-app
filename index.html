@@ -96,6 +96,7 @@
         <button type="button" class="chip" id="airlineChip" onclick="toggleSurcharge('Airline')" style="border: 1px solid var(--pink); color: var(--pink);">AIRLINE?</button>
         <button type="button" class="chip" id="tempChip" onclick="toggleSurcharge('Temp')" style="border: 1px solid var(--pink); color: var(--pink);">TEMP CTRL</button>
         <button type="button" class="chip" id="flatbedChip" onclick="toggleSurcharge('Flatbed')" style="border: 1px solid var(--pink); color: var(--pink);">FLAT BED</button>
+        <button type="button" class="chip" id="adrChip" onclick="toggleSurcharge('Adr')" style="border: 1px solid var(--pink); color: var(--pink);">ADR</button>
         <button type="button" class="chip" id="ulezChip" onclick="toggleSurcharge('Ulez')" style="border: 1px solid var(--pink); color: var(--pink);">ULEZ</button>
         <button type="button" class="chip" id="otherChip" onclick="toggleSurcharge('Other')" style="border: 1px solid var(--pink); color: var(--pink);">OTHER</button>
       </div>
@@ -109,6 +110,7 @@
       <input type="hidden" id="isAirline" value="false">
       <input type="hidden" id="isTemp" value="false">
       <input type="hidden" id="isFlatbed" value="false">
+      <input type="hidden" id="isAdr" value="false">
       <input type="hidden" id="isUlez" value="false">
       <input type="hidden" id="isOther" value="false">
     </div>
@@ -299,7 +301,7 @@ document.getElementById('btnClear').onclick = () => {
     document.getElementById('pcVia').value = '';
     
     // Reset all Surcharges
-    ['Airline', 'Temp', 'Flatbed', 'Ulez', 'Other'].forEach(type => {
+    ['Airline', 'Temp', 'Flatbed', 'Adr', 'Ulez', 'Other'].forEach(type => {
         document.getElementById('is' + type).value = 'false';
         document.getElementById(type.toLowerCase() + 'Chip').classList.remove('active');
     });
