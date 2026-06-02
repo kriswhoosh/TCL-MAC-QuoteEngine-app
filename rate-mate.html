@@ -96,8 +96,8 @@ function calculate() {
   const stops = quoteData.waypointCount || 0;
   
   // Stop Fees
-  let stopFeeTCL = (["Luton","5t","7.5t"].includes(v)) ? 25 : (["18t","Artic","3M+"].includes(v) ? 40 : 15);
-  let stopFeeMAC = Math.round(stopFeeTCL * 1.0);
+  let stopFeeTCL = (["Luton","5t","7.5t"].includes(v)) ? 30 : (["18t","Artic","3M+"].includes(v) ? 40 : 20);
+  let stopFeeMAC = Math.round(stopFeeTCL * 1.5);
 
   let t = 0;
   if (m >= 20 && m < 40) t = TARIFFS[v][0];
