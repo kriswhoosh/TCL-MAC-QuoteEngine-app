@@ -115,6 +115,7 @@
       <input type="hidden" id="isUlez" value="false">
       <input type="hidden" id="isCcz" value="false">
       <input type="hidden" id="isOther" value="false">
+    </div>
     
     <div style="margin-top:16px" class="actions">
       <button class="blue" id="btnCalc">Calculate Route</button>
@@ -258,8 +259,6 @@ document.getElementById('btnCalc').onclick = function() {
 
         document.getElementById('status').textContent = 'Calculating via Google...';
 
-        // ... rest of the function remains identical ...
-
         const directionsService = new google.maps.DirectionsService();
         
         const request = {
@@ -301,6 +300,7 @@ document.getElementById('btnCalc').onclick = function() {
                     const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}&waypoints=${encodeURIComponent(viaPoints.join('|'))}&travelmode=driving`;
                     document.getElementById('status').innerHTML = `Route ready! <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;text-decoration:underline;">[View Route on Google Maps]</a>`;
 
+                    // THIS IS THE RESTORED COMMAND TO SHOW THE BUTTON
                     if (typeof RateMate !== 'undefined') RateMate.showButton();
                 } else {
                     // This will catch REQUEST_DENIED errors (like local referer blocks)
