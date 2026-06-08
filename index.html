@@ -98,6 +98,7 @@
         <button type="button" class="chip" id="flatbedChip" onclick="toggleSurcharge('Flatbed')" style="border: 1px solid var(--pink); color: var(--pink);">FLAT BED</button>
         <button type="button" class="chip" id="adrChip" onclick="toggleSurcharge('Adr')" style="border: 1px solid var(--pink); color: var(--pink);">ADR</button>
         <button type="button" class="chip" id="ulezChip" onclick="toggleSurcharge('Ulez')" style="border: 1px solid var(--pink); color: var(--pink);">ULEZ</button>
+        <button type="button" class="chip" id="cczChip" onclick="toggleSurcharge('Ccz')" style="border: 1px solid var(--pink); color: var(--pink);">CCZ</button>
         <button type="button" class="chip" id="otherChip" onclick="toggleSurcharge('Other')" style="border: 1px solid var(--pink); color: var(--pink);">OTHER</button>
       </div>
 
@@ -112,8 +113,8 @@
       <input type="hidden" id="isFlatbed" value="false">
       <input type="hidden" id="isAdr" value="false">
       <input type="hidden" id="isUlez" value="false">
+      <input type="hidden" id="isCcz" value="false">
       <input type="hidden" id="isOther" value="false">
-    </div>
     
     <div style="margin-top:16px" class="actions">
       <button class="blue" id="btnCalc">Calculate Route</button>
@@ -215,6 +216,24 @@ window.updateRateMate = function() {
     }
 };
 
+// --- Postcode Auto-Detect Logic ---
+function autoDetectZones(postcodes) {
+    let triggers = { ulez: false, ccz: false };
+    const ulezPrefixes = ['E','EC','N','NW','SE','SW','W','WC','BR','CR','DA','EN','HA','IG','KT','RM','SM','TW','UB'];
+    const cczRegex = /^(W1[A-Z]?|WC1[A-Z]?|WC2[A-Z]?|EC1[A-Z]?|EC2[A-Z]?|EC3[A-Z]?|EC4[A-Z]?|SE1[A-Z]?|SW1[A-Z]?)$/;
+
+    postcodes.forEach(pc => {
+        if (!pc) return;
+        const clean = pc.toUpperCase().replace(/\s+/g, '');
+        let outcode = clean.length > 3 ? clean.slice(0, -3) : clean; // Isolate the first half
+        
+        const match = outcode.match(/^[A-Z]+/);
+        if (match && ulezPrefixes.includes(match[0])) triggers.ulez = true;
+        if (cczRegex.test(outcode)) triggers.ccz = true;
+    });
+    return triggers;
+}
+
 document.getElementById('btnCalc').onclick = function() {
     try {
         const from = document.getElementById('pcA').value.trim();
@@ -222,6 +241,13 @@ document.getElementById('btnCalc').onclick = function() {
         const viaRaw = document.getElementById('pcVia').value.trim();
         
         if(!from || !to) return;
+
+        // Auto-detect zones and toggle chips
+        const viaPoints = viaRaw ? viaRaw.split(',').map(p => p.trim()).filter(p => p) : [];
+        const zones = autoDetectZones([from, to, ...viaPoints]);
+        
+        if (zones.ulez && document.getElementById('isUlez').value === 'false') toggleSurcharge('Ulez');
+        if (zones.ccz && document.getElementById('isCcz').value === 'false') toggleSurcharge('Ccz');
         
         // Error Catching: Ensure Google Maps and DirectionsService are fully loaded before firing
         if(typeof google === 'undefined' || typeof google.maps === 'undefined' || typeof google.maps.DirectionsService === 'undefined') {
@@ -230,8 +256,9 @@ document.getElementById('btnCalc').onclick = function() {
             return;
         }
 
-        const viaPoints = viaRaw ? viaRaw.split(',').map(p => p.trim()).filter(p => p) : [];
         document.getElementById('status').textContent = 'Calculating via Google...';
+
+        // ... rest of the function remains identical ...
 
         const directionsService = new google.maps.DirectionsService();
         
@@ -301,7 +328,7 @@ document.getElementById('btnClear').onclick = () => {
     document.getElementById('pcVia').value = '';
     
     // Reset all Surcharges
-    ['Airline', 'Temp', 'Flatbed', 'Adr', 'Ulez', 'Other'].forEach(type => {
+    ['Airline', 'Temp', 'Flatbed', 'Adr', 'Ulez', 'Ccz', 'Other'].forEach(type => {
         document.getElementById('is' + type).value = 'false';
         document.getElementById(type.toLowerCase() + 'Chip').classList.remove('active');
     });

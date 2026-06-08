@@ -84,7 +84,7 @@ const TARIFFS = {
 
 let quoteData = { 
     pcA: '', pcB: '', distTxt: '', waypointCount: 0, viaText: '', 
-    isAirline: false, isTemp: false, isFlatbed: false, isAdr: false, isUlez: false, isOther: false, 
+    isAirline: false, isTemp: false, isFlatbed: false, isAdr: false, isUlez: false, isCcz: false, isOther: false, 
     otherText: '', otherValue: 0 
 };
 let lastTclPrice = 0;
@@ -116,7 +116,8 @@ function calculate() {
 
   // 3. Apply Flat Fee Additions on top
   if (quoteData.isAirline) { tclBase += 80; macBase += 80; }
-  if (quoteData.isUlez) { tclBase += 25; macBase += 25; }
+  if (quoteData.isUlez) { tclBase += 17.50; macBase += 17.50; }
+  if (quoteData.isCcz) { tclBase += 25; macBase += 25; }
   if (quoteData.isOther) { 
       tclBase += quoteData.otherValue; 
       macBase += quoteData.otherValue; 
@@ -143,7 +144,8 @@ function calculate() {
   if (quoteData.isFlatbed) { container.innerHTML += '<span class="surcharge-badge" style="background:#f59e0b;">FLAT BED (x3)</span>'; hasSurcharge = true; }
   if (quoteData.isAdr) { container.innerHTML += '<span class="surcharge-badge" style="background:#dc2626;">ADR (x2.25)</span>'; hasSurcharge = true; }
   if (quoteData.isAirline) { container.innerHTML += '<span class="surcharge-badge" style="background:#2563eb;">AIRLINE (+£80)</span>'; hasSurcharge = true; }
-  if (quoteData.isUlez) { container.innerHTML += '<span class="surcharge-badge" style="background:#10b981;">ULEZ (+£25)</span>'; hasSurcharge = true; }
+  if (quoteData.isUlez) { container.innerHTML += '<span class="surcharge-badge" style="background:#10b981;">ULEZ (+£17.50)</span>'; hasSurcharge = true; }
+  if (quoteData.isCcz) { container.innerHTML += '<span class="surcharge-badge" style="background:#f97316;">CCZ (+£25)</span>'; hasSurcharge = true; }
   if (quoteData.isOther && quoteData.otherText) { 
       container.innerHTML += `<span class="surcharge-badge" style="background:#ec4899;">${quoteData.otherText.toUpperCase()} (+£${quoteData.otherValue})</span>`; 
       hasSurcharge = true; 
@@ -166,12 +168,13 @@ function copyQuote(mode) {
   
   // Generate Surcharge notes for copied text
   // Generate Surcharge notes for copied text
-  let extras = [];
+ let extras = [];
   if (quoteData.isTemp) extras.push("Temp Control");
   if (quoteData.isFlatbed) extras.push("Flat Bed");
   if (quoteData.isAdr) extras.push("ADR");
   if (quoteData.isAirline) extras.push("Airline Collection");
   if (quoteData.isUlez) extras.push("ULEZ");
+  if (quoteData.isCcz) extras.push("Congestion Charge");
   if (quoteData.isOther && quoteData.otherText) extras.push(`${quoteData.otherText}`);
 
   const extraText = extras.length > 0 ? `\nIncludes: ${extras.join(', ')}` : "";
@@ -214,6 +217,7 @@ window.addEventListener('DOMContentLoaded', () => {
     quoteData.isFlatbed = params.get('isFlatbed') === 'true';
     quoteData.isAdr = params.get('isAdr') === 'true';
     quoteData.isUlez = params.get('isUlez') === 'true';
+    quoteData.isCcz = params.get('isCcz') === 'true';
     quoteData.isOther = params.get('isOther') === 'true';
     quoteData.otherText = decodeURIComponent(params.get('otherText') || '');
     quoteData.otherValue = parseFloat(params.get('otherValue')) || 0;
