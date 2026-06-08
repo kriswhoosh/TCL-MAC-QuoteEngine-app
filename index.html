@@ -297,8 +297,7 @@ document.getElementById('btnCalc').onclick = function() {
                     window.currentWaypointCount = viaPoints.length;
 
                     // Fixed Map URL string
-                    const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}&waypoints=${encodeURIComponent(viaPoints.join('|'))}&travelmode=driving`;
-                    document.getElementById('status').innerHTML = `Route ready! <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;text-decoration:underline;">[View Route on Google Maps]</a>`;
+                    const gUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(from)}&destination=${encodeURIComponent(to)}&waypoints=${encodeURIComponent(viaPoints.join('|'))}&travelmode=driving`;                    document.getElementById('status').innerHTML = `Route ready! <a href="${gUrl}" target="_blank" style="color:#ffd94a;margin-left:10px;text-decoration:underline;">[View Route on Google Maps]</a>`;
 
                     // THIS IS THE RESTORED COMMAND TO SHOW THE BUTTON
                     if (typeof RateMate !== 'undefined') RateMate.showButton();
