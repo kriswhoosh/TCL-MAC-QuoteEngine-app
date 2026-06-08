@@ -218,8 +218,7 @@ window.addEventListener('DOMContentLoaded', () => {
     quoteData.isAdr = params.get('isAdr') === 'true';
     quoteData.isUlez = params.get('isUlez') === 'true';
     quoteData.isCcz = params.get('isCcz') === 'true';
-    quoteData.isOther = params.get('isOther') === 'true';
-    quoteData.otherText = decodeURIComponent(params.get('otherText') || '');
+    quoteData.isOther = params.get('isOther') === 'true';    quoteData.otherText = decodeURIComponent(params.get('otherText') || '');
     quoteData.otherValue = parseFloat(params.get('otherValue')) || 0;
     
     calculate();
@@ -242,7 +241,8 @@ window.addEventListener('message', (e) => {
     quoteData.isFlatbed = e.data.isFlatbed || false;
     quoteData.isAdr = e.data.isAdr || false;
     quoteData.isUlez = e.data.isUlez || false;
-    quoteData.isOther = e.data.isOther || false;
+    quoteData.isCcz = e.data.isCcz || false;
+    quoteData.isOther = e.data.isOther || false;    
     quoteData.otherText = e.data.otherText || '';
     quoteData.otherValue = e.data.otherValue || 0;
     

@@ -29,8 +29,8 @@ const RateMate = (() => {
       const otherText = document.getElementById('otherText')?.value || '';
       const otherValue = parseFloat(document.getElementById('otherValue')?.value) || 0;
       
-      launch({ miles, vehicle, pcA, pcB, distTxt, waypointCount, viaText, isAirline, isTemp, isFlatbed, isAdr, isUlez, isOther, otherText, otherValue });
-    });
+      launch({ miles, vehicle, pcA, pcB, waypointCount, viaText, isAirline, isTemp, isFlatbed, isAdr, isUlez, isCcz, isOther, otherText, otherValue });
+
     initialized = true;
   }
 
@@ -54,7 +54,7 @@ function launch(data) {
     if (!card || !iframe) return;
 
     // Send all new variables securely through the URL parameters
-    const url = `${RATE_MATE_URL}?miles=${data.miles}&vehicle=${data.vehicle}&pcA=${data.pcA}&pcB=${data.pcB}&viaText=${encodeURIComponent(data.viaText)}&waypointCount=${data.waypointCount}&isAirline=${data.isAirline}&isTemp=${data.isTemp}&isFlatbed=${data.isFlatbed}&isAdr=${data.isAdr}&isUlez=${data.isUlez}&isCcz=${data.isCcz}&isOther=${data.isOther}&otherText=${encodeURIComponent(data.otherText)}&otherValue=${data.otherValue}`;
+const url = `${RATE_MATE_URL}?miles=${data.miles}&vehicle=${data.vehicle}&pcA=${data.pcA}&pcB=${data.pcB}&viaText=${encodeURIComponent(data.viaText)}&waypointCount=${data.waypointCount}&isAirline=${data.isAirline}&isTemp=${data.isTemp}&isFlatbed=${data.isFlatbed}&isAdr=${data.isAdr}&isUlez=${data.isUlez}&isCcz=${data.isCcz}&isOther=${data.isOther}&otherText=${encodeURIComponent(data.otherText)}&otherValue=${data.otherValue}`;
 
     card.style.display = 'block';
     iframe.src = url; 
@@ -88,8 +88,8 @@ function launch(data) {
              const otherText = document.getElementById('otherText')?.value || '';
              const otherValue = parseFloat(document.getElementById('otherValue')?.value) || 0;
 
-             launch({ miles, vehicle, pcA, pcB, waypointCount, viaText, isAirline, isTemp, isFlatbed, isAdr, isUlez, isOther, otherText, otherValue });
-        }
+             launch({ miles, vehicle, pcA, pcB, waypointCount, viaText, isAirline, isTemp, isFlatbed, isAdr, isUlez, isCcz, isOther, otherText, otherValue });
+            }
     } 
   };
 })();
